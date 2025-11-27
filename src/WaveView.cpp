@@ -184,45 +184,57 @@ void WaveView::zoomOut()
 
 bool WaveView::exportToPng(const QString &fileName, const QColor &background)
 {
-    if (!m_doc)
-        return false;
-    if (fileName.isEmpty())
-        return false;
+    if (!m_doc) return false;
+    if (fileName.isEmpty()) return false;
 
     const auto &sigs = m_doc->signalList();
     int sampleCount = m_doc->sampleCount();
     int signalCount = static_cast<int>(sigs.size());
 
-    // Minimum dimensions if there are no signals
-    if (signalCount == 0)
-    {
+    if (signalCount == 0) {
         signalCount = 1;
     }
 
-    int rightMargin = 20;
+    int rightMargin  = 20;
     int bottomMargin = 20;
 
-    int contentWidth = m_leftMargin + sampleCount * m_cellWidth + rightMargin;
-    int contentHeight = m_topMargin + signalCount * m_rowHeight + bottomMargin;
+    int contentWidth  = m_leftMargin + sampleCount * m_cellWidth + rightMargin;
+    int contentHeight = m_topMargin  + signalCount * m_rowHeight + bottomMargin;
 
-    QSize sz(contentWidth, contentHeight);
+    // Tamaño lógico (el tamaño "normal" del widget)
+    QSize logicalSize(contentWidth, contentHeight);
 
-    QImage image(sz, QImage::Format_ARGB32);
-    m_exportSize = sz;
-    m_exportBackground = background;
+    // Factor de escala para exportar en más resolución
+    const int scale = 3;  // prueba 2 o 3
+
+    // Tamaño real del PNG = lógico * scale
+    QSize imageSize(logicalSize.width()  * scale,
+                    logicalSize.height() * scale);
+
+    QImage image(imageSize, QImage::Format_ARGB32);
+    image.fill(Qt::transparent);
+
+    m_exportSize        = logicalSize;   // usamos el tamaño lógico en paintEvent
+    m_exportBackground  = background;
 
     QPainter painter(&image);
     painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::TextAntialiasing, true);
 
-    // Let paintEvent use m_exportBackground and m_exportSize
+
+    // dibujamos todo escalado
+    painter.scale(scale, scale);
+
+    // Usa la propia lógica de pintado de la vista
     render(&painter);
 
-    // Restore normal export state
-    m_exportBackground = QColor(); // invalida => vuelve a usar palette().base()
+    // Restaurar estado de export
+    m_exportBackground = QColor();
     m_exportSize = QSize();
 
     return image.save(fileName);
 }
+
 
 void WaveView::onDocumentChanged()
 {
@@ -284,6 +296,12 @@ void WaveView::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
     QPainter p(this);
+
+
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setRenderHint(QPainter::TextAntialiasing, true);
+    
+
     QColor bg = m_exportBackground.isValid() ? m_exportBackground : palette().base().color();
 
     int w = m_exportSize.isValid() ? m_exportSize.width() : width();
@@ -441,7 +459,10 @@ void WaveView::paintEvent(QPaintEvent *event)
     if (!arrows.empty()) {
         QPen arrowPen(Qt::red);
         arrowPen.setWidth(2);
+        arrowPen.setCapStyle(Qt::RoundCap);
+        arrowPen.setJoinStyle(Qt::RoundJoin);
         p.setPen(arrowPen);
+
 
         for (const Arrow &a : arrows) {
             QPointF p1 = signalSampleToPoint(a.startSignal, a.startSample);
