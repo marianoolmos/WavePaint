@@ -115,6 +115,8 @@ public:
     void renameSignal(int signalIndex, const QString &name);
     void cutRange(int startSample, int endSample);
 
+    void moveSignal(int fromIndex, int toIndex);
+
     void clear();
     void clearSignals();
 

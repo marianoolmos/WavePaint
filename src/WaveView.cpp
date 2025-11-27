@@ -52,6 +52,7 @@
 #include <QColorDialog>
 #include <QLinearGradient>
 #include <QMessageBox>
+#include <QCursor>
 
 static constexpr int UNDEFINED_VALUE = -1;
 
@@ -71,6 +72,8 @@ WaveView::WaveView(WaveDocument *doc, QWidget *parent)
       m_bitLastSample(-1),
       m_cutStartSample(-1),
       m_cutCurrentSample(-1),
+      m_isMovingSignal(false),
+      m_moveSignalIndex(-1),
       m_exportSize(),
       m_exportBackground()
 {
@@ -634,6 +637,17 @@ void WaveView::mousePressEvent(QMouseEvent *event)
     int sampleIdx = -1;
 
     if (event->button() == Qt::LeftButton) {
+
+        // 👉 1) Click en la zona de nombres: empezar a mover la señal
+        if (event->pos().x() < m_leftMargin) {
+            int idx = mapToSignalIndexFromY(event->pos().y());
+            if (idx >= 0) {
+                m_isMovingSignal   = true;
+                m_moveSignalIndex  = idx;
+                setCursor(Qt::ClosedHandCursor);
+                return; // no seguimos con pintura/selección
+            }
+        }
         // Eraser mode: clear the state at the clicked sample and prepare continuous erase
         if (m_mode == Mode::Erasing) {
             if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
@@ -741,6 +755,19 @@ void WaveView::mousePressEvent(QMouseEvent *event)
 
 void WaveView::mouseMoveEvent(QMouseEvent *event)
 {
+        if (m_isMovingSignal && (event->buttons() & Qt::LeftButton) && m_doc) {
+        int newIdx = mapToSignalIndexFromY(event->pos().y());
+        const auto &sigs = m_doc->signalList();
+
+        if (newIdx >= 0 &&
+            newIdx < static_cast<int>(sigs.size()) &&
+            newIdx != m_moveSignalIndex) {
+
+            m_doc->moveSignal(m_moveSignalIndex, newIdx);
+            m_moveSignalIndex = newIdx;
+        }
+        return; // no hacemos nada más en este evento
+    }
     if (m_mode == Mode::CutSelecting) {
         // Mientras estamos en modo tijera y ya hay un punto de inicio,
         // actualizamos la segunda línea roja siguiendo el ratón.
@@ -812,7 +839,20 @@ void WaveView::mouseMoveEvent(QMouseEvent *event)
 
 void WaveView::mouseReleaseEvent(QMouseEvent *event)
 {
-
+    if (m_isMovingSignal && event->button() == Qt::LeftButton) {
+        m_isMovingSignal  = false;
+        m_moveSignalIndex = -1;
+        unsetCursor();
+        event->accept();
+        return;
+    }
+        if (m_isMovingSignal && event->button() == Qt::LeftButton) {
+        m_isMovingSignal  = false;
+        m_moveSignalIndex = -1;
+        unsetCursor();
+        event->accept();
+        return;
+    }
     if (m_mode == Mode::Erasing && event->button() == Qt::LeftButton) {
         m_bitPaintSignal = -1;
         m_bitLastSample = -1;
@@ -1009,3 +1049,4 @@ void WaveView::addClockSignal()
 
     m_doc->addClockSignal(name, pulses, highSamples, lowSamples);
 }
+

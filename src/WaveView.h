@@ -114,6 +114,10 @@ private:
     int m_cutStartSample;
     int m_cutCurrentSample;
 
+    //Moving Signals
+    bool m_isMovingSignal;
+    int m_moveSignalIndex;  
+
     // Optional size for export (exact content width/height)
     QSize m_exportSize;
     // Background color for export (if invalid, use palette background)
