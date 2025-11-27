@@ -117,6 +117,9 @@ public:
 
     void moveSignal(int fromIndex, int toIndex);
 
+    void copySignal(int signalIndex);
+    int  pasteSignal(int destIndex);
+    bool hasClipboardSignal() const { return m_hasClipboardSignal; }
     void clear();
     void clearSignals();
 
@@ -138,6 +141,9 @@ private:
     int m_sampleCount;
     std::vector<Signal> m_signals;      // visible signals in the waveform
     std::vector<Signal> m_vcdSignals;   // library of signals loaded from VCD
+
+    bool   m_hasClipboardSignal = false;
+    Signal m_clipboardSignal;
 
     void resizeSignals(int newSampleCount);
 };

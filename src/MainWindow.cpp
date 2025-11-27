@@ -606,17 +606,8 @@ void WaveDocument::moveSignal(int fromIndex, int toIndex)
     if (toIndex   < 0 || toIndex   >= count) return;
     if (fromIndex == toIndex) return;
 
-    // Guardamos la señal
     Signal s = m_signals[fromIndex];
-
-    // La quitamos de su posición original
     m_signals.erase(m_signals.begin() + fromIndex);
-
-    // Si hemos eliminado antes de la posición de destino, hay que ajustar
-    if (toIndex > fromIndex)
-        --toIndex;
-
-    // La insertamos en la nueva posición
     m_signals.insert(m_signals.begin() + toIndex, s);
 
     emit dataChanged();

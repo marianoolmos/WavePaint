@@ -52,7 +52,8 @@ static constexpr int UNDEFINED_VALUE = -1;
 
 WaveDocument::WaveDocument(QObject *parent)
     : QObject(parent),
-      m_sampleCount(64)
+      m_sampleCount(64),
+      m_hasClipboardSignal(false)
 {
     // Initial document: no signals, but with a default sample count
 }
@@ -321,3 +322,38 @@ bool WaveDocument::loadFromFile(const QString &fileName)
     return WaveJsonIO::loadFromFile(*this, fileName);
 }
 
+void WaveDocument::copySignal(int signalIndex)
+{
+    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size()))
+        return;
+
+    m_clipboardSignal   = m_signals[signalIndex];
+    m_hasClipboardSignal = true;
+}
+
+int WaveDocument::pasteSignal(int destIndex)
+{
+    if (!m_hasClipboardSignal)
+        return -1;
+
+    Signal s = m_clipboardSignal;
+
+    // Asegurar nombre único
+    QString baseName = s.name;
+    QString newName  = baseName;
+    int count = static_cast<int>(m_signals.size());
+    int copyIndex = 1;
+    while (std::any_of(m_signals.begin(), m_signals.end(),
+                       [&](const Signal &sig){ return sig.name == newName; }))
+    {
+        newName = baseName + QStringLiteral("_copy%1").arg(copyIndex++);
+    }
+    s.name = newName;
+
+    if (destIndex < 0 || destIndex > count)
+        destIndex = count;
+
+    m_signals.insert(m_signals.begin() + destIndex, s);
+    emit dataChanged();
+    return destIndex;
+}

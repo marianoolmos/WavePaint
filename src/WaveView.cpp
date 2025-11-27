@@ -1,15 +1,15 @@
 // ========================================================================================
-//  /@@      /@@                               /@@@@@@@           /@@             /@@    
-// | @@  /@ | @@                              | @@__  @@         |__/            | @@    
-// | @@ /@@@| @@  /@@@@@@  /@@    /@@ /@@@@@@ | @@  \ @@ /@@@@@@  /@@ /@@@@@@@  /@@@@@@  
-// | @@/@@ @@ @@ |____  @@|  @@  /@@//@@__  @@| @@@@@@@/|____  @@| @@| @@__  @@|_  @@_/  
-// | @@@@_  @@@@  /@@@@@@@ \  @@/@@/| @@@@@@@@| @@____/  /@@@@@@@| @@| @@  \ @@  | @@    
+//  /@@      /@@                               /@@@@@@@           /@@             /@@
+// | @@  /@ | @@                              | @@__  @@         |__/            | @@
+// | @@ /@@@| @@  /@@@@@@  /@@    /@@ /@@@@@@ | @@  \ @@ /@@@@@@  /@@ /@@@@@@@  /@@@@@@
+// | @@/@@ @@ @@ |____  @@|  @@  /@@//@@__  @@| @@@@@@@/|____  @@| @@| @@__  @@|_  @@_/
+// | @@@@_  @@@@  /@@@@@@@ \  @@/@@/| @@@@@@@@| @@____/  /@@@@@@@| @@| @@  \ @@  | @@
 // | @@@/ \  @@@ /@@__  @@  \  @@@/ | @@_____/| @@      /@@__  @@| @@| @@  | @@  | @@ /@@
 // | @@/   \  @@|  @@@@@@@   \  @/  |  @@@@@@@| @@     |  @@@@@@@| @@| @@  | @@  |  @@@@/
-// |__/     \__/ \_______/    \_/    \_______/|__/      \_______/|__/|__/  |__/   \___/  
-//                                                                                       
-// ___|HHHHHHHHH|______|HHHHHHHHH|___ ___|HHHHHHHHH|___ ___|HHHHHHHHH|___ ___|HHHHHHHHH|___ 
-//                                                                                       
+// |__/     \__/ \_______/    \_/    \_______/|__/      \_______/|__/|__/  |__/   \___/
+//
+// ___|HHHHHHHHH|______|HHHHHHHHH|___ ___|HHHHHHHHH|___ ___|HHHHHHHHH|___ ___|HHHHHHHHH|___
+//
 //
 // Project:       WavePaint
 // Description:
@@ -80,7 +80,8 @@ WaveView::WaveView(WaveDocument *doc, QWidget *parent)
     setMouseTracking(true);
     setAutoFillBackground(true);
 
-    if (m_doc) {
+    if (m_doc)
+    {
         connect(m_doc, &WaveDocument::dataChanged,
                 this, &WaveView::onDocumentChanged);
     }
@@ -93,7 +94,8 @@ QSize WaveView::minimumSizeHint() const
 
 QSize WaveView::sizeHint() const
 {
-    if (!m_doc) {
+    if (!m_doc)
+    {
         return QSize(800, 400);
     }
 
@@ -112,8 +114,6 @@ QSize WaveView::sizeHint() const
     return QSize(w, h);
 }
 
-
-
 void WaveView::startCutMode()
 {
     // Shortcut to activate cut mode from other parts of the UI
@@ -122,12 +122,16 @@ void WaveView::startCutMode()
 
 void WaveView::setCutModeEnabled(bool en)
 {
-    if (en) {
+    if (en)
+    {
         m_mode = Mode::CutSelecting;
         m_cutStartSample = -1;
         m_cutCurrentSample = -1;
-    } else {
-        if (m_mode == Mode::CutSelecting) {
+    }
+    else
+    {
+        if (m_mode == Mode::CutSelecting)
+        {
             m_mode = Mode::None;
         }
         m_cutStartSample = -1;
@@ -138,12 +142,16 @@ void WaveView::setCutModeEnabled(bool en)
 
 void WaveView::setEraseModeEnabled(bool en)
 {
-    if (en) {
+    if (en)
+    {
         m_mode = Mode::Erasing;
         m_bitPaintSignal = -1;
         m_bitLastSample = -1;
-    } else {
-        if (m_mode == Mode::Erasing) {
+    }
+    else
+    {
+        if (m_mode == Mode::Erasing)
+        {
             m_mode = Mode::None;
         }
         m_bitPaintSignal = -1;
@@ -167,21 +175,20 @@ void WaveView::zoomOut()
     update();
 }
 
-
-
-
-
 bool WaveView::exportToPng(const QString &fileName, const QColor &background)
 {
-    if (!m_doc) return false;
-    if (fileName.isEmpty()) return false;
+    if (!m_doc)
+        return false;
+    if (fileName.isEmpty())
+        return false;
 
     const auto &sigs = m_doc->signalList();
     int sampleCount = m_doc->sampleCount();
     int signalCount = static_cast<int>(sigs.size());
 
     // Minimum dimensions if there are no signals
-    if (signalCount == 0) {
+    if (signalCount == 0)
+    {
         signalCount = 1;
     }
 
@@ -210,8 +217,6 @@ bool WaveView::exportToPng(const QString &fileName, const QColor &background)
     return image.save(fileName);
 }
 
-
-
 void WaveView::onDocumentChanged()
 {
     updateGeometry();
@@ -220,26 +225,31 @@ void WaveView::onDocumentChanged()
 
 bool WaveView::mapToSignalSample(const QPoint &pos, int &signalIndex, int &sampleIndex) const
 {
-    if (!m_doc) return false;
+    if (!m_doc)
+        return false;
 
     int x = pos.x();
     int y = pos.y();
 
-    if (x < m_leftMargin || y < m_topMargin) return false;
+    if (x < m_leftMargin || y < m_topMargin)
+        return false;
 
     int relY = y - m_topMargin;
     signalIndex = relY / m_rowHeight;
 
     const auto &sigs = m_doc->signalList();
-    if (signalIndex < 0 || signalIndex >= static_cast<int>(sigs.size())) {
+    if (signalIndex < 0 || signalIndex >= static_cast<int>(sigs.size()))
+    {
         return false;
     }
 
     int relX = x - m_leftMargin;
-    if (relX < 0) return false;
+    if (relX < 0)
+        return false;
 
     int sample = relX / m_cellWidth;
-    if (sample < 0 || sample >= m_doc->sampleCount()) return false;
+    if (sample < 0 || sample >= m_doc->sampleCount())
+        return false;
 
     sampleIndex = sample;
     return true;
@@ -247,19 +257,21 @@ bool WaveView::mapToSignalSample(const QPoint &pos, int &signalIndex, int &sampl
 
 int WaveView::mapToSignalIndexFromY(int y) const
 {
-    if (!m_doc) return -1;
-    if (y < m_topMargin) return -1;
+    if (!m_doc)
+        return -1;
+    if (y < m_topMargin)
+        return -1;
 
     int relY = y - m_topMargin;
     int signalIndex = relY / m_rowHeight;
 
     const auto &sigs = m_doc->signalList();
-    if (signalIndex < 0 || signalIndex >= static_cast<int>(sigs.size())) {
+    if (signalIndex < 0 || signalIndex >= static_cast<int>(sigs.size()))
+    {
         return -1;
     }
     return signalIndex;
 }
-
 
 void WaveView::paintEvent(QPaintEvent *event)
 {
@@ -272,7 +284,8 @@ void WaveView::paintEvent(QPaintEvent *event)
     QRect drawRect(0, 0, w, h);
     p.fillRect(drawRect, bg);
 
-    if (!m_doc) return;
+    if (!m_doc)
+        return;
 
     const auto &sigs = m_doc->signalList();
     int sampleCount = m_doc->sampleCount();
@@ -281,18 +294,22 @@ void WaveView::paintEvent(QPaintEvent *event)
     int lumBg = qRound(0.299 * bg.red() + 0.587 * bg.green() + 0.114 * bg.blue());
     QColor axisColor = (lumBg < 128) ? Qt::white : Qt::black;
 
-
     // Time axis (sample indices)
     p.setPen(axisColor);
     QFontMetrics fm(p.font());
 
     int labelStep = 1;
-    if (sampleCount > 200)   labelStep = 5;
-    if (sampleCount > 1000)  labelStep = 10;
-    if (sampleCount > 5000)  labelStep = 50;
-    if (sampleCount > 20000) labelStep = 100;
+    if (sampleCount > 200)
+        labelStep = 5;
+    if (sampleCount > 1000)
+        labelStep = 10;
+    if (sampleCount > 5000)
+        labelStep = 50;
+    if (sampleCount > 20000)
+        labelStep = 100;
 
-    for (int t = 0; t < sampleCount; t += labelStep) {
+    for (int t = 0; t < sampleCount; t += labelStep)
+    {
         int x = m_leftMargin + t * m_cellWidth;
         QString label = QString::number(t);
         int tw = fm.horizontalAdvance(label);
@@ -305,18 +322,23 @@ void WaveView::paintEvent(QPaintEvent *event)
     p.setPen(gridPen);
 
     int gridStep = 1;
-    if (sampleCount > 2000)  gridStep = 5;
-    if (sampleCount > 5000)  gridStep = 10;
-    if (sampleCount > 20000) gridStep = 50;
+    if (sampleCount > 2000)
+        gridStep = 5;
+    if (sampleCount > 5000)
+        gridStep = 10;
+    if (sampleCount > 20000)
+        gridStep = 50;
 
-    for (int t = 0; t <= sampleCount; t += gridStep) {
+    for (int t = 0; t <= sampleCount; t += gridStep)
+    {
         int x = m_leftMargin + t * m_cellWidth;
         p.drawLine(x, m_topMargin, x, h);
     }
 
     // Draw signals
     p.setPen(axisColor);
-    for (int i = 0; i < static_cast<int>(sigs.size()); ++i) {
+    for (int i = 0; i < static_cast<int>(sigs.size()); ++i)
+    {
         drawSignal(p, sigs[i], i);
     }
 
@@ -324,22 +346,24 @@ void WaveView::paintEvent(QPaintEvent *event)
     drawVectorSelection(p);
 
     // Cut lines (cut mode)
-    if (m_mode == Mode::CutSelecting) {
+    if (m_mode == Mode::CutSelecting)
+    {
         QPen cutPen(Qt::red);
         cutPen.setWidth(2);
         p.setPen(cutPen);
 
-        if (m_cutStartSample >= 0) {
+        if (m_cutStartSample >= 0)
+        {
             int x0 = m_leftMargin + m_cutStartSample * m_cellWidth;
             p.drawLine(x0, m_topMargin, x0, h);
         }
-        if (m_cutCurrentSample >= 0 && m_cutCurrentSample != m_cutStartSample) {
+        if (m_cutCurrentSample >= 0 && m_cutCurrentSample != m_cutStartSample)
+        {
             int x1 = m_leftMargin + m_cutCurrentSample * m_cellWidth;
             p.drawLine(x1, m_topMargin, x1, h);
         }
     }
 }
-
 
 void WaveView::drawSignal(QPainter &p, const Signal &sig, int index)
 {
@@ -363,15 +387,18 @@ void WaveView::drawSignal(QPainter &p, const Signal &sig, int index)
     p.setPen(QColor(200, 200, 200));
     p.drawLine(0, bottom, width(), bottom);
 
-    if (sig.values.empty()) return;
+    if (sig.values.empty())
+        return;
 
-    if (sig.type == SignalType::Bit) {
+    if (sig.type == SignalType::Bit)
+    {
         drawBitSignal(p, sig, index);
-    } else {
+    }
+    else
+    {
         drawVectorSignal(p, sig, index);
     }
 }
-
 
 void WaveView::drawBitSignal(QPainter &p, const Signal &sig, int index)
 {
@@ -380,7 +407,7 @@ void WaveView::drawBitSignal(QPainter &p, const Signal &sig, int index)
 
     // Wave levels
     int highY = top + m_rowHeight * 0.25;
-    int lowY  = top + m_rowHeight * 0.75;
+    int lowY = top + m_rowHeight * 0.75;
 
     p.save();
 
@@ -395,16 +422,22 @@ void WaveView::drawBitSignal(QPainter &p, const Signal &sig, int index)
 
     const auto &vals = sig.values;
     int runStart = -1;
-    for (int t = 0; t < sampleCount; ++t) {
+    for (int t = 0; t < sampleCount; ++t)
+    {
         int v = (t < static_cast<int>(vals.size())) ? vals[t] : UNDEFINED_VALUE;
-        if (v == 1) {
+        if (v == 1)
+        {
             if (runStart < 0)
                 runStart = t;
-        } else {
-            if (runStart >= 0) {
+        }
+        else
+        {
+            if (runStart >= 0)
+            {
                 int x1 = m_leftMargin + runStart * m_cellWidth;
                 int x2 = m_leftMargin + t * m_cellWidth;
-                if (x2 > x1) {
+                if (x2 > x1)
+                {
                     QRect gradRect(x1, highY, x2 - x1, lowY - highY);
                     p.fillRect(gradRect, grad);
                 }
@@ -412,10 +445,12 @@ void WaveView::drawBitSignal(QPainter &p, const Signal &sig, int index)
             }
         }
     }
-    if (runStart >= 0) {
+    if (runStart >= 0)
+    {
         int x1 = m_leftMargin + runStart * m_cellWidth;
         int x2 = m_leftMargin + sampleCount * m_cellWidth;
-        if (x2 > x1) {
+        if (x2 > x1)
+        {
             QRect gradRect(x1, highY, x2 - x1, lowY - highY);
             p.fillRect(gradRect, grad);
         }
@@ -429,11 +464,13 @@ void WaveView::drawBitSignal(QPainter &p, const Signal &sig, int index)
     bool havePrev = false;
     int prevY = lowY;
 
-    for (int t = 0; t < sampleCount; ++t) {
+    for (int t = 0; t < sampleCount; ++t)
+    {
         int v = (t < static_cast<int>(vals.size())) ? vals[t] : UNDEFINED_VALUE;
 
         // If the value is undefined, cut the stroke and draw nothing for this sample.
-        if (v != 0 && v != 1) {
+        if (v != 0 && v != 1)
+        {
             havePrev = false;
             continue;
         }
@@ -443,12 +480,16 @@ void WaveView::drawBitSignal(QPainter &p, const Signal &sig, int index)
 
         int y = (v == 0) ? lowY : highY;
 
-        if (!havePrev) {
+        if (!havePrev)
+        {
             prevY = y;
             havePrev = true;
-        } else {
+        }
+        else
+        {
             // vertical transition if value changes
-            if (y != prevY) {
+            if (y != prevY)
+            {
                 p.drawLine(x0, prevY, x0, y);
             }
             prevY = y;
@@ -460,12 +501,6 @@ void WaveView::drawBitSignal(QPainter &p, const Signal &sig, int index)
 
     p.restore();
 }
-
-
-
-
-
-
 
 void WaveView::drawVectorSignal(QPainter &p, const Signal &sig, int index)
 {
@@ -480,11 +515,11 @@ void WaveView::drawVectorSignal(QPainter &p, const Signal &sig, int index)
 
     p.save();
 
-    QColor baseColor = sig.color;     
-    QColor fillColor = baseColor;     
-    fillColor.setAlphaF(0.6);          
-    QPen pen(baseColor);               
-    pen.setWidth(2);                   
+    QColor baseColor = sig.color;
+    QColor fillColor = baseColor;
+    fillColor.setAlphaF(0.6);
+    QPen pen(baseColor);
+    pen.setWidth(2);
     p.setPen(pen);
 
     const auto &vals = sig.values;
@@ -493,9 +528,11 @@ void WaveView::drawVectorSignal(QPainter &p, const Signal &sig, int index)
     int triW = std::min(8, std::max(4, m_cellWidth / 3));
 
     int t = 0;
-    while (t < sampleCount) {
+    while (t < sampleCount)
+    {
         int v = (t < static_cast<int>(vals.size())) ? vals[t] : UNDEFINED_VALUE;
-        if (v == UNDEFINED_VALUE) {
+        if (v == UNDEFINED_VALUE)
+        {
             ++t;
             continue;
         }
@@ -503,7 +540,8 @@ void WaveView::drawVectorSignal(QPainter &p, const Signal &sig, int index)
         // Group segment of consecutive samples with the same value
         int start = t;
         int end = t;
-        for (int k = t + 1; k < sampleCount; ++k) {
+        for (int k = t + 1; k < sampleCount; ++k)
+        {
             int vk = (k < static_cast<int>(vals.size())) ? vals[k] : UNDEFINED_VALUE;
             if (vk != v)
                 break;
@@ -513,14 +551,16 @@ void WaveView::drawVectorSignal(QPainter &p, const Signal &sig, int index)
         // Check if there will be a peak to the left/right
         int prevIndex = start - 1;
         bool hasLeftPeak = false;
-        if (prevIndex >= 0) {
+        if (prevIndex >= 0)
+        {
             int prevV = (prevIndex < static_cast<int>(vals.size())) ? vals[prevIndex] : UNDEFINED_VALUE;
             hasLeftPeak = (prevV != UNDEFINED_VALUE && prevV != v);
         }
 
         int nextIndex = end + 1;
         bool hasRightPeak = false;
-        if (nextIndex < sampleCount) {
+        if (nextIndex < sampleCount)
+        {
             int nextV = (nextIndex < static_cast<int>(vals.size())) ? vals[nextIndex] : UNDEFINED_VALUE;
             hasRightPeak = (nextV != UNDEFINED_VALUE && nextV != v);
         }
@@ -562,7 +602,8 @@ void WaveView::drawVectorSignal(QPainter &p, const Signal &sig, int index)
         int cy = barTop + barHeight / 2;
 
         // Left side: peak with base on the bar and tip outward
-        if (hasLeftPeak) {
+        if (hasLeftPeak)
+        {
             int baseX = barLeft;
             int tipX = leftEdge;
             QPolygon triL;
@@ -575,7 +616,8 @@ void WaveView::drawVectorSignal(QPainter &p, const Signal &sig, int index)
         }
 
         // Right side: peak with base on the bar and tip outward
-        if (hasRightPeak) {
+        if (hasRightPeak)
+        {
             int baseX = barRight;
             int tipX = rightEdge;
             QPolygon triR;
@@ -593,22 +635,21 @@ void WaveView::drawVectorSignal(QPainter &p, const Signal &sig, int index)
     p.restore();
 }
 
-
-
-
-
-
 void WaveView::drawVectorSelection(QPainter &p)
 {
-    if (m_mode != Mode::VectorSelecting) return;
-    if (!m_doc) return;
+    if (m_mode != Mode::VectorSelecting)
+        return;
+    if (!m_doc)
+        return;
 
     const auto &sigs = m_doc->signalList();
-    if (m_selSignal < 0 || m_selSignal >= static_cast<int>(sigs.size())) return;
+    if (m_selSignal < 0 || m_selSignal >= static_cast<int>(sigs.size()))
+        return;
 
     int start = std::min(m_selStartSample, m_selCurrentSample);
     int end = std::max(m_selStartSample, m_selCurrentSample);
-    if (start < 0 || end < 0 || start >= m_doc->sampleCount()) return;
+    if (start < 0 || end < 0 || start >= m_doc->sampleCount())
+        return;
 
     int top = m_topMargin + m_selSignal * m_rowHeight + 4;
     int heightRect = m_rowHeight - 8;
@@ -627,30 +668,38 @@ void WaveView::drawVectorSelection(QPainter &p)
     p.restore();
 }
 
-
-
 void WaveView::mousePressEvent(QMouseEvent *event)
 {
-    if (!m_doc) return;
+    if (!m_doc)
+    {
+        QWidget::mousePressEvent(event);
+        return;
+    }
 
     int sigIdx = -1;
     int sampleIdx = -1;
 
-    if (event->button() == Qt::LeftButton) {
+    if (event->button() == Qt::LeftButton)
+    {
 
-        // 👉 1) Click en la zona de nombres: empezar a mover la señal
-        if (event->pos().x() < m_leftMargin) {
+        // 1) Click izquierdo en zona de nombres -> empezar a arrastrar la señal
+        if (event->pos().x() < m_leftMargin)
+        {
             int idx = mapToSignalIndexFromY(event->pos().y());
-            if (idx >= 0) {
-                m_isMovingSignal   = true;
-                m_moveSignalIndex  = idx;
+            if (idx >= 0)
+            {
+                m_isMovingSignal = true;
+                m_moveSignalIndex = idx;
                 setCursor(Qt::ClosedHandCursor);
-                return; // no seguimos con pintura/selección
+                return; // no seguimos con pintura/borra/etc.
             }
         }
-        // Eraser mode: clear the state at the clicked sample and prepare continuous erase
-        if (m_mode == Mode::Erasing) {
-            if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
+
+        // 2) Modo goma
+        if (m_mode == Mode::Erasing)
+        {
+            if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+            {
                 m_bitPaintSignal = sigIdx;
                 m_bitLastSample = sampleIdx;
                 m_doc->clearSample(sigIdx, sampleIdx);
@@ -658,48 +707,37 @@ void WaveView::mousePressEvent(QMouseEvent *event)
             return;
         }
 
-        // Cut mode: first select one point, then the second.
-        // Show red lines and ask confirmation before cutting.
-        if (m_mode == Mode::CutSelecting) {
-    
-        // Eraser mode: clear the state at the clicked sample and prepare continuous erase
-        if (m_mode == Mode::Erasing) {
-            if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
-                m_bitPaintSignal = sigIdx;
-                m_bitLastSample = sampleIdx;
-                m_doc->clearSample(sigIdx, sampleIdx);
-            }
-            return;
-        }
-
-        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
-                if (m_cutStartSample < 0) {
-                    // First point
+        // 3) Modo tijeras
+        if (m_mode == Mode::CutSelecting)
+        {
+            if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+            {
+                if (m_cutStartSample < 0)
+                {
                     m_cutStartSample = sampleIdx;
                     m_cutCurrentSample = sampleIdx;
                     update();
-                } else {
-                    // Second point -> show both lines and ask confirmation
+                }
+                else
+                {
                     m_cutCurrentSample = sampleIdx;
                     update();
 
                     int s0 = std::min(m_cutStartSample, sampleIdx);
                     int s1 = std::max(m_cutStartSample, sampleIdx);
-
-                    QString msg = tr("Cut waveform from sample %1 to %2?").arg(s0).arg(s1);
-                    QMessageBox::StandardButton reply = QMessageBox::question(
+                    QString msg = tr("Cut waveform from sample %1 to %2?")
+                                      .arg(s0)
+                                      .arg(s1);
+                    auto reply = QMessageBox::question(
                         this,
                         tr("Cut range"),
                         msg,
                         QMessageBox::Yes | QMessageBox::No,
-                        QMessageBox::No
-                    );
-
-                    if (reply == QMessageBox::Yes) {
+                        QMessageBox::No);
+                    if (reply == QMessageBox::Yes)
+                    {
                         m_doc->cutRange(s0, s1);
                     }
-
-                    // Reset points but keep cut mode active
                     m_cutStartSample = -1;
                     m_cutCurrentSample = -1;
                     update();
@@ -708,13 +746,16 @@ void WaveView::mousePressEvent(QMouseEvent *event)
             return;
         }
 
-        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
+        // 4) Pintar bit / seleccionar vector
+        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+        {
             const auto &sigs = m_doc->signalList();
-            if (sigIdx >= 0 && sigIdx < static_cast<int>(sigs.size())) {
+            if (sigIdx >= 0 && sigIdx < static_cast<int>(sigs.size()))
+            {
                 const Signal &sig = sigs[sigIdx];
 
-                if (sig.type == SignalType::Bit) {
-                    // Continuous painting: top = 1, bottom = 0
+                if (sig.type == SignalType::Bit)
+                {
                     int top = m_topMargin + sigIdx * m_rowHeight;
                     int midY = top + m_rowHeight / 2;
                     int y = event->pos().y();
@@ -726,74 +767,84 @@ void WaveView::mousePressEvent(QMouseEvent *event)
                     m_bitLastSample = sampleIdx;
 
                     m_doc->setBitValue(sigIdx, sampleIdx, v);
-                    return;
-                } else {
-                    // Vector: start selection
+                }
+                else
+                {
                     m_mode = Mode::VectorSelecting;
                     m_selSignal = sigIdx;
                     m_selStartSample = sampleIdx;
                     m_selCurrentSample = sampleIdx;
                     update();
-                    return;
                 }
             }
-        }
-    }
-
-    if (event->button() == Qt::RightButton) {
-        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
-            m_doc->clearSample(sigIdx, sampleIdx);
             return;
         }
     }
 
+    // Botón derecho -> no hacemos nada aquí, lo maneja contextMenuEvent
     QWidget::mousePressEvent(event);
 }
 
-
-
-
 void WaveView::mouseMoveEvent(QMouseEvent *event)
 {
-        if (m_isMovingSignal && (event->buttons() & Qt::LeftButton) && m_doc) {
+    if (!m_doc)
+    {
+        QWidget::mouseMoveEvent(event);
+        return;
+    }
+
+    // 1) Arrastre de señal (reordenar verticalmente)
+    if (m_isMovingSignal && (event->buttons() & Qt::LeftButton))
+    {
         int newIdx = mapToSignalIndexFromY(event->pos().y());
         const auto &sigs = m_doc->signalList();
 
         if (newIdx >= 0 &&
             newIdx < static_cast<int>(sigs.size()) &&
-            newIdx != m_moveSignalIndex) {
+            newIdx != m_moveSignalIndex)
+        {
 
             m_doc->moveSignal(m_moveSignalIndex, newIdx);
             m_moveSignalIndex = newIdx;
         }
-        return; // no hacemos nada más en este evento
+        return;
     }
-    if (m_mode == Mode::CutSelecting) {
-        // Mientras estamos en modo tijera y ya hay un punto de inicio,
-        // actualizamos la segunda línea roja siguiendo el ratón.
-        if (m_cutStartSample >= 0) {
-            int sigIdx = -1;
-            int sampleIdx = -1;
-            if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
-                if (sampleIdx != m_cutCurrentSample) {
-                    m_cutCurrentSample = sampleIdx;
-                    update();
-                }
-            }
-        }
 
-    if (m_mode == Mode::Erasing && (event->buttons() & Qt::LeftButton)) {
+    // 2) Tijeras: actualizar segunda línea roja
+    if (m_mode == Mode::CutSelecting && m_cutStartSample >= 0)
+    {
         int sigIdx = -1;
         int sampleIdx = -1;
-        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
-            if (m_bitPaintSignal < 0) {
+        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+        {
+            if (sampleIdx != m_cutCurrentSample)
+            {
+                m_cutCurrentSample = sampleIdx;
+                update();
+            }
+        }
+        return;
+    }
+
+    // 3) Goma (borrado continuo)
+    if (m_mode == Mode::Erasing && (event->buttons() & Qt::LeftButton))
+    {
+        int sigIdx = -1;
+        int sampleIdx = -1;
+        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+        {
+            if (m_bitPaintSignal < 0)
+            {
                 m_bitPaintSignal = sigIdx;
                 m_bitLastSample = sampleIdx;
                 m_doc->clearSample(sigIdx, sampleIdx);
-            } else if (sigIdx == m_bitPaintSignal && sampleIdx != m_bitLastSample) {
+            }
+            else if (sigIdx == m_bitPaintSignal && sampleIdx != m_bitLastSample)
+            {
                 int from = std::min(m_bitLastSample, sampleIdx);
                 int to = std::max(m_bitLastSample, sampleIdx);
-                for (int s = from; s <= to; ++s) {
+                for (int s = from; s <= to; ++s)
+                {
                     m_doc->clearSample(sigIdx, s);
                 }
                 m_bitLastSample = sampleIdx;
@@ -802,17 +853,19 @@ void WaveView::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
-        return;
-    }
-
-    if (m_mode == Mode::BitPainting) {
+    // 4) Pintura de bit continua
+    if (m_mode == Mode::BitPainting)
+    {
         int sigIdx = -1;
         int sampleIdx = -1;
-        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
-            if (sigIdx == m_bitPaintSignal && sampleIdx != m_bitLastSample) {
+        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+        {
+            if (sigIdx == m_bitPaintSignal && sampleIdx != m_bitLastSample)
+            {
                 int from = std::min(m_bitLastSample, sampleIdx);
                 int to = std::max(m_bitLastSample, sampleIdx);
-                for (int s = from; s <= to; ++s) {
+                for (int s = from; s <= to; ++s)
+                {
                     m_doc->setBitValue(sigIdx, s, m_bitPaintValue);
                 }
                 m_bitLastSample = sampleIdx;
@@ -821,11 +874,15 @@ void WaveView::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
-    if (m_mode == Mode::VectorSelecting) {
+    // 5) Selección de vector (rectángulo azul)
+    if (m_mode == Mode::VectorSelecting)
+    {
         int sigIdx = -1;
         int sampleIdx = -1;
-        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
-            if (sigIdx == m_selSignal) {
+        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+        {
+            if (sigIdx == m_selSignal)
+            {
                 m_selCurrentSample = sampleIdx;
                 update();
             }
@@ -836,58 +893,67 @@ void WaveView::mouseMoveEvent(QMouseEvent *event)
     QWidget::mouseMoveEvent(event);
 }
 
-
 void WaveView::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (m_isMovingSignal && event->button() == Qt::LeftButton) {
-        m_isMovingSignal  = false;
+    if (!m_doc)
+    {
+        QWidget::mouseReleaseEvent(event);
+        return;
+    }
+
+    // Fin de arrastre de señal
+    if (m_isMovingSignal && event->button() == Qt::LeftButton)
+    {
+        m_isMovingSignal = false;
         m_moveSignalIndex = -1;
         unsetCursor();
         event->accept();
         return;
     }
-        if (m_isMovingSignal && event->button() == Qt::LeftButton) {
-        m_isMovingSignal  = false;
-        m_moveSignalIndex = -1;
-        unsetCursor();
-        event->accept();
-        return;
-    }
-    if (m_mode == Mode::Erasing && event->button() == Qt::LeftButton) {
+
+    if (m_mode == Mode::Erasing && event->button() == Qt::LeftButton)
+    {
         m_bitPaintSignal = -1;
         m_bitLastSample = -1;
         return;
     }
 
-    if (m_mode == Mode::BitPainting && event->button() == Qt::LeftButton) {
+    if (m_mode == Mode::BitPainting && event->button() == Qt::LeftButton)
+    {
         m_mode = Mode::None;
         m_bitPaintSignal = -1;
         m_bitLastSample = -1;
         return;
     }
 
-    
-    if (m_mode == Mode::VectorSelecting && event->button() == Qt::LeftButton) {
+    if (m_mode == Mode::VectorSelecting && event->button() == Qt::LeftButton)
+    {
         int sigIdx = -1;
         int sampleIdx = -1;
-        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx) && sigIdx == m_selSignal) {
+        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx) &&
+            sigIdx == m_selSignal)
+        {
+
             bool ok = false;
-            QString text = QInputDialog::getText(this, tr("Set vector value"),
-                                                 tr("Value (decimal):"),
-                                                 QLineEdit::Normal,
-                                                 QString(), &ok);
-            if (ok && !text.isEmpty()) {
+            QString text = QInputDialog::getText(
+                this, tr("Set vector value"),
+                tr("Value (decimal):"),
+                QLineEdit::Normal,
+                QString(), &ok);
+            if (ok && !text.isEmpty())
+            {
                 bool okInt = false;
                 int value = text.toInt(&okInt, 0);
-                if (okInt) {
+                if (okInt)
+                {
                     bool okLabel = false;
-                    QString label = QInputDialog::getText(this, tr("Vector label"),
-                                                          tr("Optional label (DATA, ADDR, etc.):"),
-                                                          QLineEdit::Normal,
-                                                          QString(), &okLabel);
-                    if (!okLabel) {
+                    QString label = QInputDialog::getText(
+                        this, tr("Vector label"),
+                        tr("Optional label (DATA, ADDR, etc.):"),
+                        QLineEdit::Normal,
+                        QString(), &okLabel);
+                    if (!okLabel)
                         label.clear();
-                    }
                     m_doc->setVectorRange(m_selSignal, m_selStartSample, sampleIdx, value, label);
                 }
             }
@@ -901,25 +967,28 @@ void WaveView::mouseReleaseEvent(QMouseEvent *event)
         return;
     }
 
-
     QWidget::mouseReleaseEvent(event);
 }
 
 void WaveView::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    if (!m_doc) {
+    if (!m_doc)
+    {
         QWidget::mouseDoubleClickEvent(event);
         return;
     }
 
     // Doble clic en el nombre de la señal para cambiar el color
-    if (event->button() == Qt::LeftButton && event->pos().x() < m_leftMargin) {
+    if (event->button() == Qt::LeftButton && event->pos().x() < m_leftMargin)
+    {
         int sigIdx = mapToSignalIndexFromY(event->pos().y());
-        if (sigIdx >= 0) {
+        if (sigIdx >= 0)
+        {
             const auto &sigs = m_doc->signalList();
             QColor initial = sigs[sigIdx].color;
             QColor c = QColorDialog::getColor(initial, this, tr("Choose signal color"));
-            if (c.isValid()) {
+            if (c.isValid())
+            {
                 m_doc->setSignalColor(sigIdx, c);
             }
             return;
@@ -929,52 +998,80 @@ void WaveView::mouseDoubleClickEvent(QMouseEvent *event)
     QWidget::mouseDoubleClickEvent(event);
 }
 
-
 void WaveView::contextMenuEvent(QContextMenuEvent *event)
 {
-    if (!m_doc) {
+    if (!m_doc)
+    {
         QWidget::contextMenuEvent(event);
         return;
     }
 
-    // Clic derecho en la zona de nombres: menú para renombrar / cambiar color
-    if (event->pos().x() < m_leftMargin) {
+    // Right click
+    if (event->pos().x() < m_leftMargin)
+    {
         int sigIdx = mapToSignalIndexFromY(event->pos().y());
-        if (sigIdx >= 0) {
+        if (sigIdx >= 0)
+        {
             QMenu menu(this);
             QAction *renameAct = menu.addAction(tr("Rename signal..."));
             QAction *colorAct = menu.addAction(tr("Change color..."));
+            menu.addSeparator();
+
+            // Copy /Paste
+            QAction *copyAct = menu.addAction(tr("Copy signal"));
+            QAction *pasteAct = nullptr;
+            if (m_doc && m_doc->hasClipboardSignal())
+            {
+                pasteAct = menu.addAction(tr("Paste signal (duplicate)"));
+            }
 
             QAction *chosen = menu.exec(event->globalPos());
-            if (!chosen) return;
+            if (!chosen)
+                return;
 
-            if (chosen == renameAct) {
+            // Rename signal
+            if (chosen == renameAct)
+            {
                 const auto &sigs = m_doc->signalList();
                 QString currentName = sigs[sigIdx].name;
                 bool ok = false;
-                QString newName = QInputDialog::getText(this,
-                                                        tr("Rename signal"),
-                                                        tr("New signal name:"),
-                                                        QLineEdit::Normal,
-                                                        currentName,
-                                                        &ok);
-                if (ok && !newName.isEmpty()) {
+                QString newName = QInputDialog::getText(
+                    this,
+                    tr("Rename signal"),
+                    tr("New signal name:"),
+                    QLineEdit::Normal,
+                    currentName,
+                    &ok);
+                if (ok && !newName.isEmpty())
                     m_doc->renameSignal(sigIdx, newName);
-                }
-                return;
-            } else if (chosen == colorAct) {
+            }
+
+            // Change color
+            else if (chosen == colorAct)
+            {
                 const auto &sigs = m_doc->signalList();
                 QColor initial = sigs[sigIdx].color;
                 QColor c = QColorDialog::getColor(initial, this, tr("Choose signal color"));
-                if (c.isValid()) {
+                if (c.isValid())
                     m_doc->setSignalColor(sigIdx, c);
-                }
-                return;
+            }
+
+            // Copy signal
+            else if (chosen == copyAct)
+            {
+                m_doc->copySignal(sigIdx);
+            }
+
+            // Signal Paste
+            else if (pasteAct && chosen == pasteAct)
+            {
+                m_doc->pasteSignal(sigIdx + 1);
             }
         }
+        return;
     }
 
-    // Zona de waveform: menú para añadir nuevas señales
+    // Waveform zone
     QMenu menu(this);
     QAction *addBitAct = menu.addAction(tr("Add bit signal"));
     QAction *addVectorAct = menu.addAction(tr("Add vector signal"));
@@ -985,17 +1082,22 @@ void WaveView::contextMenuEvent(QContextMenuEvent *event)
     Q_UNUSED(cancelAct);
 
     QAction *chosen = menu.exec(event->globalPos());
-    if (!chosen) return;
+    if (!chosen)
+        return;
 
-    if (chosen == addBitAct) {
+    if (chosen == addBitAct)
+    {
         addBitSignal();
-    } else if (chosen == addVectorAct) {
+    }
+    else if (chosen == addVectorAct)
+    {
         addVectorSignal();
-    } else if (chosen == addClockAct) {
+    }
+    else if (chosen == addClockAct)
+    {
         addClockSignal();
     }
 }
-
 
 void WaveView::addBitSignal()
 {
@@ -1003,7 +1105,8 @@ void WaveView::addBitSignal()
     QString name = QInputDialog::getText(this, tr("Add bit signal"),
                                          tr("Signal name:"), QLineEdit::Normal,
                                          tr("bit_signal"), &ok);
-    if (!ok || name.isEmpty()) return;
+    if (!ok || name.isEmpty())
+        return;
 
     m_doc->addBitSignal(name);
 }
@@ -1014,12 +1117,14 @@ void WaveView::addVectorSignal()
     QString name = QInputDialog::getText(this, tr("Add vector signal"),
                                          tr("Signal name:"), QLineEdit::Normal,
                                          tr("vec_signal"), &ok);
-    if (!ok || name.isEmpty()) return;
+    if (!ok || name.isEmpty())
+        return;
 
     bool okWidth = false;
     int width = QInputDialog::getInt(this, tr("Vector width"),
                                      tr("Width (bits):"), 8, 1, 1024, 1, &okWidth);
-    if (!okWidth) return;
+    if (!okWidth)
+        return;
 
     m_doc->addVectorSignal(name, width);
 }
@@ -1030,23 +1135,26 @@ void WaveView::addClockSignal()
     QString name = QInputDialog::getText(this, tr("Add clock signal"),
                                          tr("Clock name:"), QLineEdit::Normal,
                                          tr("clk"), &ok);
-    if (!ok || name.isEmpty()) return;
+    if (!ok || name.isEmpty())
+        return;
 
     bool okPulses = false;
     int pulses = QInputDialog::getInt(this, tr("Clock pulses"),
                                       tr("Number of pulses:"), 8, 1, 100000, 1, &okPulses);
-    if (!okPulses) return;
+    if (!okPulses)
+        return;
 
     bool okHigh = false;
     int highSamples = QInputDialog::getInt(this, tr("High time"),
                                            tr("High time (samples):"), 1, 0, 100000, 1, &okHigh);
-    if (!okHigh) return;
+    if (!okHigh)
+        return;
 
     bool okLow = false;
     int lowSamples = QInputDialog::getInt(this, tr("Low time"),
                                           tr("Low time (samples):"), 1, 0, 100000, 1, &okLow);
-    if (!okLow) return;
+    if (!okLow)
+        return;
 
     m_doc->addClockSignal(name, pulses, highSamples, lowSamples);
 }
-
