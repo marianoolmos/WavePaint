@@ -1,15 +1,15 @@
 // ========================================================================================
-//  /@@      /@@                               /@@@@@@@           /@@             /@@    
-// | @@  /@ | @@                              | @@__  @@         |__/            | @@    
-// | @@ /@@@| @@  /@@@@@@  /@@    /@@ /@@@@@@ | @@  \ @@ /@@@@@@  /@@ /@@@@@@@  /@@@@@@  
-// | @@/@@ @@ @@ |____  @@|  @@  /@@//@@__  @@| @@@@@@@/|____  @@| @@| @@__  @@|_  @@_/  
-// | @@@@_  @@@@  /@@@@@@@ \  @@/@@/| @@@@@@@@| @@____/  /@@@@@@@| @@| @@  \ @@  | @@    
+//  /@@      /@@                               /@@@@@@@           /@@             /@@
+// | @@  /@ | @@                              | @@__  @@         |__/            | @@
+// | @@ /@@@| @@  /@@@@@@  /@@    /@@ /@@@@@@ | @@  \ @@ /@@@@@@  /@@ /@@@@@@@  /@@@@@@
+// | @@/@@ @@ @@ |____  @@|  @@  /@@//@@__  @@| @@@@@@@/|____  @@| @@| @@__  @@|_  @@_/
+// | @@@@_  @@@@  /@@@@@@@ \  @@/@@/| @@@@@@@@| @@____/  /@@@@@@@| @@| @@  \ @@  | @@
 // | @@@/ \  @@@ /@@__  @@  \  @@@/ | @@_____/| @@      /@@__  @@| @@| @@  | @@  | @@ /@@
 // | @@/   \  @@|  @@@@@@@   \  @/  |  @@@@@@@| @@     |  @@@@@@@| @@| @@  | @@  |  @@@@/
-// |__/     \__/ \_______/    \_/    \_______/|__/      \_______/|__/|__/  |__/   \___/  
-//                                                                                       
-// ___|HHHHHHHHH|______|HHHHHHHHH|___ ___|HHHHHHHHH|___ ___|HHHHHHHHH|___ ___|HHHHHHHHH|___ 
-//                                                                                       
+// |__/     \__/ \_______/    \_/    \_______/|__/      \_______/|__/|__/  |__/   \___/
+//
+// ___|HHHHHHHHH|______|HHHHHHHHH|___ ___|HHHHHHHHH|___ ___|HHHHHHHHH|___ ___|HHHHHHHHH|___
+//
 //
 // Project:       WavePaint
 // Description:
@@ -60,11 +60,13 @@ WaveDocument::WaveDocument(QObject *parent)
 
 void WaveDocument::resizeSignals(int newSampleCount)
 {
-    for (auto &sig : m_signals) {
+    for (auto &sig : m_signals)
+    {
         int oldSize = static_cast<int>(sig.values.size());
         sig.values.resize(newSampleCount, UNDEFINED_VALUE);
         sig.labels.resize(newSampleCount); // QString() by default
-        if (newSampleCount > oldSize) {
+        if (newSampleCount > oldSize)
+        {
             // The new samples remain at UNDEFINED_VALUE and have empty labels
         }
     }
@@ -72,8 +74,10 @@ void WaveDocument::resizeSignals(int newSampleCount)
 
 void WaveDocument::setSampleCount(int count)
 {
-    if (count <= 0) return;
-    if (count == m_sampleCount) return;
+    if (count <= 0)
+        return;
+    if (count == m_sampleCount)
+        return;
 
     m_sampleCount = count;
     resizeSignals(m_sampleCount);
@@ -83,7 +87,7 @@ void WaveDocument::setSampleCount(int count)
 int WaveDocument::addBitSignal(const QString &name)
 {
     Signal s(name, SignalType::Bit, 1, m_sampleCount);
-    s.color = QColor(0, 160, 0);  
+    s.color = QColor(0, 160, 0);
     std::fill(s.values.begin(), s.values.end(), 0); // default 0
     std::fill(s.labels.begin(), s.labels.end(), QString());
     m_signals.push_back(s);
@@ -93,9 +97,10 @@ int WaveDocument::addBitSignal(const QString &name)
 
 int WaveDocument::addVectorSignal(const QString &name, int width)
 {
-    if (width <= 0) width = 1;
+    if (width <= 0)
+        width = 1;
     Signal s(name, SignalType::Vector, width, m_sampleCount);
-    s.color = QColor(0, 160, 0);  
+    s.color = QColor(0, 160, 0);
     std::fill(s.values.begin(), s.values.end(), UNDEFINED_VALUE);
     std::fill(s.labels.begin(), s.labels.end(), QString());
     m_signals.push_back(s);
@@ -105,17 +110,20 @@ int WaveDocument::addVectorSignal(const QString &name, int width)
 
 int WaveDocument::addClockSignal(const QString &name, int pulses, int highSamples, int lowSamples)
 {
-    if (pulses <= 0 || highSamples < 0 || lowSamples < 0) {
+    if (pulses <= 0 || highSamples < 0 || lowSamples < 0)
+    {
         return -1;
     }
 
     int period = highSamples + lowSamples;
-    if (period <= 0) {
+    if (period <= 0)
+    {
         return -1;
     }
 
     int neededSamples = pulses * period;
-    if (neededSamples > m_sampleCount) {
+    if (neededSamples > m_sampleCount)
+    {
         setSampleCount(neededSamples);
     }
 
@@ -123,11 +131,13 @@ int WaveDocument::addClockSignal(const QString &name, int pulses, int highSample
     std::fill(s.values.begin(), s.values.end(), 0);
     std::fill(s.labels.begin(), s.labels.end(), QString());
 
-    for (int p = 0; p < pulses; ++p) {
+    for (int p = 0; p < pulses; ++p)
+    {
         int base = p * period;
         int highStart = base + lowSamples;
         int highEnd = std::min(base + period, m_sampleCount);
-        for (int i = highStart; i < highEnd; ++i) {
+        for (int i = highStart; i < highEnd; ++i)
+        {
             s.values[i] = 1;
         }
     }
@@ -139,29 +149,38 @@ int WaveDocument::addClockSignal(const QString &name, int pulses, int highSample
 
 void WaveDocument::toggleBitValue(int signalIndex, int sampleIndex)
 {
-    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size())) return;
-    if (sampleIndex < 0 || sampleIndex >= m_sampleCount) return;
+    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size()))
+        return;
+    if (sampleIndex < 0 || sampleIndex >= m_sampleCount)
+        return;
 
     Signal &s = m_signals[signalIndex];
-    if (s.type != SignalType::Bit) return;
+    if (s.type != SignalType::Bit)
+        return;
 
     int &v = s.values[sampleIndex];
-    if (v == 1) v = 0;
-    else v = 1;
+    if (v == 1)
+        v = 0;
+    else
+        v = 1;
 
     emit dataChanged();
 }
 
 void WaveDocument::setBitValue(int signalIndex, int sampleIndex, int value)
 {
-    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size())) return;
-    if (sampleIndex < 0 || sampleIndex >= m_sampleCount) return;
+    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size()))
+        return;
+    if (sampleIndex < 0 || sampleIndex >= m_sampleCount)
+        return;
 
     Signal &s = m_signals[signalIndex];
-    if (s.type != SignalType::Bit) return;
+    if (s.type != SignalType::Bit)
+        return;
 
     int v = (value != 0) ? 1 : 0;
-    if (s.values[sampleIndex] == v) return;
+    if (s.values[sampleIndex] == v)
+        return;
 
     s.values[sampleIndex] = v;
     s.labels[sampleIndex].clear(); // no labels for bits
@@ -170,16 +189,20 @@ void WaveDocument::setBitValue(int signalIndex, int sampleIndex, int value)
 
 void WaveDocument::setVectorRange(int signalIndex, int startSample, int endSample, int value, const QString &label)
 {
-    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size())) return;
-    if (startSample < 0 && endSample < 0) return;
+    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size()))
+        return;
+    if (startSample < 0 && endSample < 0)
+        return;
 
     Signal &s = m_signals[signalIndex];
-    if (s.type != SignalType::Vector) return;
+    if (s.type != SignalType::Vector)
+        return;
 
     int s0 = std::max(0, std::min(startSample, endSample));
     int s1 = std::min(m_sampleCount - 1, std::max(startSample, endSample));
 
-    for (int i = s0; i <= s1; ++i) {
+    for (int i = s0; i <= s1; ++i)
+    {
         s.values[i] = value;
         if (!label.isEmpty())
             s.labels[i] = label;
@@ -192,8 +215,10 @@ void WaveDocument::setVectorRange(int signalIndex, int startSample, int endSampl
 
 void WaveDocument::clearSample(int signalIndex, int sampleIndex)
 {
-    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size())) return;
-    if (sampleIndex < 0 || sampleIndex >= m_sampleCount) return;
+    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size()))
+        return;
+    if (sampleIndex < 0 || sampleIndex >= m_sampleCount)
+        return;
 
     Signal &s = m_signals[signalIndex];
     s.values[sampleIndex] = UNDEFINED_VALUE;
@@ -204,14 +229,16 @@ void WaveDocument::clearSample(int signalIndex, int sampleIndex)
 
 void WaveDocument::setSignalColor(int signalIndex, const QColor &c)
 {
-    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size())) return;
+    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size()))
+        return;
     m_signals[signalIndex].color = c;
     emit dataChanged();
 }
 
 void WaveDocument::renameSignal(int signalIndex, const QString &name)
 {
-    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size())) return;
+    if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size()))
+        return;
     m_signals[signalIndex].name = name;
     emit dataChanged();
 }
@@ -230,34 +257,47 @@ void WaveDocument::clearSignals()
     emit dataChanged();
 }
 
-
 void WaveDocument::cutRange(int startSample, int endSample)
 {
-    if (m_sampleCount <= 0) return;
-    if (startSample < 0 && endSample < 0) return;
+    if (m_sampleCount <= 0)
+        return;
+    if (startSample < 0 && endSample < 0)
+        return;
 
-    if (startSample < 0) startSample = 0;
-    if (endSample < 0) endSample = 0;
-    if (startSample > endSample) std::swap(startSample, endSample);
+    if (startSample < 0)
+        startSample = 0;
+    if (endSample < 0)
+        endSample = 0;
+    if (startSample > endSample)
+        std::swap(startSample, endSample);
 
-    if (startSample >= m_sampleCount) return;
-    if (endSample >= m_sampleCount) endSample = m_sampleCount - 1;
+    if (startSample >= m_sampleCount)
+        return;
+    if (endSample >= m_sampleCount)
+        endSample = m_sampleCount - 1;
 
     int newCount = endSample - startSample + 1;
-    if (newCount <= 0) return;
+    if (newCount <= 0)
+        return;
 
-    for (auto &sig : m_signals) {
+    for (auto &sig : m_signals)
+    {
         std::vector<int> newValues(newCount, UNDEFINED_VALUE);
         std::vector<QString> newLabels(newCount);
 
-        for (int i = 0; i < newCount; ++i) {
+        for (int i = 0; i < newCount; ++i)
+        {
             int src = startSample + i;
-            if (src >= 0 && src < static_cast<int>(sig.values.size())) {
+            if (src >= 0 && src < static_cast<int>(sig.values.size()))
+            {
                 newValues[i] = sig.values[src];
-            } else {
+            }
+            else
+            {
                 newValues[i] = UNDEFINED_VALUE;
             }
-            if (src >= 0 && src < static_cast<int>(sig.labels.size())) {
+            if (src >= 0 && src < static_cast<int>(sig.labels.size()))
+            {
                 newLabels[i] = sig.labels[src];
             }
         }
@@ -270,24 +310,19 @@ void WaveDocument::cutRange(int startSample, int endSample)
     emit dataChanged();
 }
 
-
-
 bool WaveDocument::loadFromVcd(const QString &fileName)
 {
     return WaveVcdImporter::loadFromVcd(*this, fileName);
 }
 
-
-
-
-
-
 int WaveDocument::addSignalFromVcd(const QString &fullName)
 {
     // Search for the signal in the VCD library and copy it to the visible list
     int idx = -1;
-    for (int i = 0; i < static_cast<int>(m_vcdSignals.size()); ++i) {
-        if (m_vcdSignals[i].name == fullName) {
+    for (int i = 0; i < static_cast<int>(m_vcdSignals.size()); ++i)
+    {
+        if (m_vcdSignals[i].name == fullName)
+        {
             idx = i;
             break;
         }
@@ -298,7 +333,8 @@ int WaveDocument::addSignalFromVcd(const QString &fullName)
     const Signal &src = m_vcdSignals[idx];
 
     // Ensure sampleCount is consistent
-    if (static_cast<int>(src.values.size()) != m_sampleCount) {
+    if (static_cast<int>(src.values.size()) != m_sampleCount)
+    {
         m_sampleCount = static_cast<int>(src.values.size());
         resizeSignals(m_sampleCount);
     }
@@ -308,14 +344,10 @@ int WaveDocument::addSignalFromVcd(const QString &fullName)
     return static_cast<int>(m_signals.size()) - 1;
 }
 
-
-
 bool WaveDocument::saveToFile(const QString &fileName) const
 {
     return WaveJsonIO::saveToFile(*this, fileName);
 }
-
-
 
 bool WaveDocument::loadFromFile(const QString &fileName)
 {
@@ -327,7 +359,7 @@ void WaveDocument::copySignal(int signalIndex)
     if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size()))
         return;
 
-    m_clipboardSignal   = m_signals[signalIndex];
+    m_clipboardSignal = m_signals[signalIndex];
     m_hasClipboardSignal = true;
 }
 
@@ -338,13 +370,14 @@ int WaveDocument::pasteSignal(int destIndex)
 
     Signal s = m_clipboardSignal;
 
-    // Asegurar nombre único
+    // 1 Name only
     QString baseName = s.name;
-    QString newName  = baseName;
+    QString newName = baseName;
     int count = static_cast<int>(m_signals.size());
     int copyIndex = 1;
     while (std::any_of(m_signals.begin(), m_signals.end(),
-                       [&](const Signal &sig){ return sig.name == newName; }))
+                       [&](const Signal &sig)
+                       { return sig.name == newName; }))
     {
         newName = baseName + QStringLiteral("_copy%1").arg(copyIndex++);
     }
@@ -356,4 +389,13 @@ int WaveDocument::pasteSignal(int destIndex)
     m_signals.insert(m_signals.begin() + destIndex, s);
     emit dataChanged();
     return destIndex;
+}
+void WaveDocument::removeSignal(int signalIndex)
+{
+    int count = static_cast<int>(m_signals.size());
+    if (signalIndex < 0 || signalIndex >= count)
+        return;
+
+    m_signals.erase(m_signals.begin() + signalIndex);
+    emit dataChanged();   // para que WaveView se redibuje
 }

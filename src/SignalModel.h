@@ -114,7 +114,7 @@ public:
     void setSignalColor(int signalIndex, const QColor &c);
     void renameSignal(int signalIndex, const QString &name);
     void cutRange(int startSample, int endSample);
-
+    void removeSignal(int signalIndex);
     void moveSignal(int fromIndex, int toIndex);
 
     void copySignal(int signalIndex);

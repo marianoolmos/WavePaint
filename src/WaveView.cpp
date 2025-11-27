@@ -1025,6 +1025,10 @@ void WaveView::contextMenuEvent(QContextMenuEvent *event)
                 pasteAct = menu.addAction(tr("Paste signal (duplicate)"));
             }
 
+
+            menu.addSeparator();
+            QAction *deleteAct = menu.addAction(tr("Delete signal"));
+
             QAction *chosen = menu.exec(event->globalPos());
             if (!chosen)
                 return;
@@ -1062,10 +1066,15 @@ void WaveView::contextMenuEvent(QContextMenuEvent *event)
                 m_doc->copySignal(sigIdx);
             }
 
-            // Signal Paste
+            // Paste Signal 
             else if (pasteAct && chosen == pasteAct)
             {
                 m_doc->pasteSignal(sigIdx + 1);
+            }
+            // Remove Signal
+            else if (chosen == deleteAct) {
+
+                m_doc->removeSignal(sigIdx);
             }
         }
         return;
