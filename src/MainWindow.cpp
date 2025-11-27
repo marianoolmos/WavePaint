@@ -211,25 +211,25 @@ void MainWindow::createToolBar()
     m_eraseAction->setCheckable(true);
     m_eraseAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_B));
 
-    // Selector
-    m_cutAction = tb->addAction(QString::fromUtf8("⬚"));
-    m_cutAction->setToolTip(tr("Selection: select to delete/cut/copy"));
-    m_cutAction->setCheckable(true);
-    m_cutAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_W));
+    //* Selector
+    m_selAction = tb->addAction(QString::fromUtf8("⬚"));
+    m_selAction->setToolTip(tr("Selection: select to delete/cut/copy"));
+    m_selAction->setCheckable(true);
+    m_selAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_W));
 
     tb->addSeparator();
 
     // Arrows
-    m_cutAction = tb->addAction(QString::fromUtf8("↝"));
-    m_cutAction->setToolTip(tr("Arrows: Select two points to add an arrow"));
-    m_cutAction->setCheckable(true);
-    m_cutAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
+    m_arrowAction = tb->addAction(QString::fromUtf8("↝"));
+    m_arrowAction->setToolTip(tr("Arrows: Select two points to add an arrow"));
+    m_arrowAction->setCheckable(true);
+    m_arrowAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
 
     // Add Marker
-    m_cutAction = tb->addAction(QString::fromUtf8("+|"));
-    m_cutAction->setToolTip(tr("Add a marker"));
-    m_cutAction->setCheckable(true);
-    m_cutAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
+    m_markerAction = tb->addAction(QString::fromUtf8("+|"));
+    m_markerAction->setToolTip(tr("Add a marker"));
+    m_markerAction->setCheckable(true);
+    m_markerAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
 
     tb->addSeparator();
 
