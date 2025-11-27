@@ -62,18 +62,16 @@ struct Signal
 {
     QString name;
     SignalType type;
-    int width;                    // 1 for bit, >1 for vector
     std::vector<int> values;      // -1 = undefined, >=0 valid value
     std::vector<QString> labels;  // optional labels per sample (for vectors)
     QColor color;                 // drawing color of the signal
 
     Signal(const QString &n = QString(),
            SignalType t = SignalType::Bit,
-           int w = 1,
+
            int samples = 0)
         : name(n),
           type(t),
-          width(w),
           values(samples, -1),
           labels(samples),
           color(Qt::black)
@@ -104,7 +102,7 @@ public:
 
     // High-level API
     int addBitSignal(const QString &name);
-    int addVectorSignal(const QString &name, int width);
+    int addVectorSignal(const QString &name);
     int addClockSignal(const QString &name, int pulses, int highSamples, int lowSamples);
 
     void toggleBitValue(int signalIndex, int sampleIndex);          // still available if needed

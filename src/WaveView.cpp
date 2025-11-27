@@ -588,9 +588,9 @@ void WaveView::drawVectorSignal(QPainter &p, const Signal &sig, int index)
 
         QString text;
         if (label.isEmpty())
-            text = QString::number(v);
+            text = QString("%1").arg(label);
         else
-            text = QString("%1 (%2)").arg(label).arg(v);
+            text = QString("%1").arg(label);
 
         // Choose readable text color over the fill
         int lum = qRound(0.299 * fillColor.red() + 0.587 * fillColor.green() + 0.114 * fillColor.blue());
@@ -934,29 +934,29 @@ void WaveView::mouseReleaseEvent(QMouseEvent *event)
             sigIdx == m_selSignal)
         {
 
-            bool ok = false;
-            QString text = QInputDialog::getText(
-                this, tr("Set vector value"),
-                tr("Value (decimal):"),
-                QLineEdit::Normal,
-                QString(), &ok);
-            if (ok && !text.isEmpty())
-            {
-                bool okInt = false;
-                int value = text.toInt(&okInt, 0);
-                if (okInt)
-                {
-                    bool okLabel = false;
-                    QString label = QInputDialog::getText(
-                        this, tr("Vector label"),
-                        tr("Optional label (DATA, ADDR, etc.):"),
-                        QLineEdit::Normal,
-                        QString(), &okLabel);
-                    if (!okLabel)
-                        label.clear();
-                    m_doc->setVectorRange(m_selSignal, m_selStartSample, sampleIdx, value, label);
-                }
-            }
+
+
+         
+
+        
+    
+        int value;
+        QString label = QInputDialog::getText(
+            this, tr("Vector label"),
+            tr("Name or Value:"),
+            QLineEdit::Normal,
+            QString());
+        if (label.isEmpty())
+        {
+             value = 0;
+        }else
+        {
+             value = label.toInt(0)+1;
+        }
+ 
+        m_doc->setVectorRange(m_selSignal, m_selStartSample, sampleIdx, value, label);
+                
+            
         }
 
         m_mode = Mode::None;
@@ -1129,13 +1129,7 @@ void WaveView::addVectorSignal()
     if (!ok || name.isEmpty())
         return;
 
-    bool okWidth = false;
-    int width = QInputDialog::getInt(this, tr("Vector width"),
-                                     tr("Width (bits):"), 8, 1, 1024, 1, &okWidth);
-    if (!okWidth)
-        return;
-
-    m_doc->addVectorSignal(name, width);
+    m_doc->addVectorSignal(name);
 }
 
 void WaveView::addClockSignal()

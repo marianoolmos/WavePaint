@@ -253,7 +253,6 @@ bool WaveVcdImporter::loadFromVcd(WaveDocument &doc, const QString &fileName)
         Signal s;
         s.name = tmp.name;
         s.type = tmp.type;
-        s.width = tmp.width;
         s.values = tmp.values;
         s.labels = tmp.labels;
         if (s.type == SignalType::Bit)

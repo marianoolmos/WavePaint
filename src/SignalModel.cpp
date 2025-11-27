@@ -52,7 +52,7 @@ static constexpr int UNDEFINED_VALUE = -1;
 
 WaveDocument::WaveDocument(QObject *parent)
     : QObject(parent),
-      m_sampleCount(64),
+      m_sampleCount(20),
       m_hasClipboardSignal(false)
 {
     // Initial document: no signals, but with a default sample count
@@ -86,7 +86,7 @@ void WaveDocument::setSampleCount(int count)
 
 int WaveDocument::addBitSignal(const QString &name)
 {
-    Signal s(name, SignalType::Bit, 1, m_sampleCount);
+    Signal s(name, SignalType::Bit, m_sampleCount);
     s.color = QColor(0, 160, 0);
     std::fill(s.values.begin(), s.values.end(), 0); // default 0
     std::fill(s.labels.begin(), s.labels.end(), QString());
@@ -95,11 +95,10 @@ int WaveDocument::addBitSignal(const QString &name)
     return static_cast<int>(m_signals.size()) - 1;
 }
 
-int WaveDocument::addVectorSignal(const QString &name, int width)
+int WaveDocument::addVectorSignal(const QString &name)
 {
-    if (width <= 0)
-        width = 1;
-    Signal s(name, SignalType::Vector, width, m_sampleCount);
+    
+    Signal s(name, SignalType::Vector, m_sampleCount);
     s.color = QColor(0, 160, 0);
     std::fill(s.values.begin(), s.values.end(), UNDEFINED_VALUE);
     std::fill(s.labels.begin(), s.labels.end(), QString());
@@ -127,7 +126,7 @@ int WaveDocument::addClockSignal(const QString &name, int pulses, int highSample
         setSampleCount(neededSamples);
     }
 
-    Signal s(name, SignalType::Bit, 1, m_sampleCount);
+    Signal s(name, SignalType::Bit, m_sampleCount);
     std::fill(s.values.begin(), s.values.end(), 0);
     std::fill(s.labels.begin(), s.labels.end(), QString());
 
@@ -203,11 +202,9 @@ void WaveDocument::setVectorRange(int signalIndex, int startSample, int endSampl
 
     for (int i = s0; i <= s1; ++i)
     {
-        s.values[i] = value;
-        if (!label.isEmpty())
+            s.values[i] = value;
             s.labels[i] = label;
-        else
-            s.labels[i].clear();
+      
     }
 
     emit dataChanged();
@@ -247,7 +244,7 @@ void WaveDocument::clear()
 {
     m_signals.clear();
     m_vcdSignals.clear();
-    m_sampleCount = 64;
+    m_sampleCount = 20;
     emit dataChanged();
 }
 

@@ -41,9 +41,9 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //======================================================================
-
 #include "io/WaveJsonIO.h"
 #include "SignalModel.h"
+
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -65,7 +65,6 @@ bool WaveJsonIO::saveToFile(const WaveDocument &doc, const QString &fileName)
         QJsonObject so;
         so["name"] = s.name;
         so["type"] = (s.type == SignalType::Bit ? "bit" : "vector");
-        so["width"] = s.width;
         so["color"] = s.color.name(QColor::HexArgb);
 
         QJsonArray vals;
@@ -118,7 +117,6 @@ bool WaveJsonIO::loadFromFile(WaveDocument &doc, const QString &fileName)
         s.name = so.value("name").toString();
         QString typeStr = so.value("type").toString("bit");
         s.type = (typeStr == "vector") ? SignalType::Vector : SignalType::Bit;
-        s.width = so.value("width").toInt(s.type == SignalType::Bit ? 1 : 8);
         s.color = QColor(so.value("color").toString("#009600"));
 
         QJsonArray vals = so.value("values").toArray();

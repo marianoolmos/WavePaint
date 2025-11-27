@@ -86,6 +86,8 @@ private:
     void createMenus();
     void createToolBar();
     void rebuildHierarchy();
+    int signalCount() const;
+    void moveSignal(int from, int to);
 
 private slots:
     void newDocument();
