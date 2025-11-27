@@ -183,11 +183,21 @@ void MainWindow::createToolBar()
     QToolBar *tb = addToolBar(tr("Timeline"));
     tb->setMovable(false);
 
+    // Undo / redo (Actions)
+    QAction *undoAct = tb->addAction(QStringLiteral("↶"));
+    undoAct->setToolTip(tr("Undo"));
+    QAction *redoAct = tb->addAction(QStringLiteral("↷"));
+    redoAct->setToolTip(tr("Redo"));
+
+    tb->addSeparator();
+
     // Zoom out / zoom in buttons
     QAction *zoomOutAct = tb->addAction(QStringLiteral("-"));
     zoomOutAct->setToolTip(tr("Zoom out (less detail)"));
     QAction *zoomInAct = tb->addAction(QStringLiteral("+"));
     zoomInAct->setToolTip(tr("Zoom in (more detail)"));
+
+    tb->addSeparator();
 
     // Scissors (cut) button with emoji
     m_cutAction = tb->addAction(QString::fromUtf8("✂"));
@@ -196,18 +206,41 @@ void MainWindow::createToolBar()
     m_cutAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_T));
 
     // Eraser button
-    m_eraseAction = tb->addAction(QString::fromUtf8("🧽"));
+    m_eraseAction = tb->addAction(QString::fromUtf8("x"));
     m_eraseAction->setToolTip(tr("Eraser: click/drag to clear samples"));
     m_eraseAction->setCheckable(true);
     m_eraseAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_B));
 
+    // Selector
+    m_cutAction = tb->addAction(QString::fromUtf8("⬚"));
+    m_cutAction->setToolTip(tr("Selection: select to delete/cut/copy"));
+    m_cutAction->setCheckable(true);
+    m_cutAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_W));
+
+    tb->addSeparator();
+
+    // Arrows
+    m_cutAction = tb->addAction(QString::fromUtf8("↝"));
+    m_cutAction->setToolTip(tr("Arrows: Select two points to add an arrow"));
+    m_cutAction->setCheckable(true);
+    m_cutAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
+
+    // Add Marker
+    m_cutAction = tb->addAction(QString::fromUtf8("+|"));
+    m_cutAction->setToolTip(tr("Add a marker"));
+    m_cutAction->setCheckable(true);
+    m_cutAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
+
+    tb->addSeparator();
+
+    // Number of time steps
     m_sampleSpin = new QSpinBox(tb);
     m_sampleSpin->setRange(4, 1000000);
     m_sampleSpin->setValue(m_document.sampleCount());
     m_sampleSpin->setToolTip(tr("Number of time steps"));
 
     tb->addWidget(m_sampleSpin);
-
+    
     // Connections
     connect(zoomOutAct, &QAction::triggered, m_waveView, &WaveView::zoomOut);
     connect(zoomInAct, &QAction::triggered, m_waveView, &WaveView::zoomIn);
