@@ -41,7 +41,8 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //======================================================================
-
+#include <QPainterPath>   
+#include <cmath>      
 #include "WaveView.h"
 #include <QPainter>
 #include <QMouseEvent>
@@ -75,6 +76,11 @@ WaveView::WaveView(WaveDocument *doc, QWidget *parent)
       m_isMovingSignal(false),
       m_moveSignalIndex(-1),
       m_markerPreviewSample(-1),
+      m_arrowHasStart(false),
+      m_arrowStartSignal(-1),
+      m_arrowStartSample(-1),
+      m_arrowPreviewSignal(-1),
+      m_arrowPreviewSample(-1),
       m_exportSize(),
       m_exportBackground()
 {
@@ -430,6 +436,70 @@ void WaveView::paintEvent(QPaintEvent *event)
 
         p.setFont(oldFont);
     }
+    // --- Flechas existentes ---
+    const auto &arrows = m_doc->arrowList();
+    if (!arrows.empty()) {
+        QPen arrowPen(Qt::red);
+        arrowPen.setWidth(2);
+        p.setPen(arrowPen);
+
+        for (const Arrow &a : arrows) {
+            QPointF p1 = signalSampleToPoint(a.startSignal, a.startSample);
+            QPointF p2 = signalSampleToPoint(a.endSignal,   a.endSample);
+
+            QPainterPath path;
+            path.moveTo(p1);
+
+            // Curva simple: control en el medio, un poco por arriba
+            qreal midX = (p1.x() + p2.x()) / 2.0;
+            qreal dy   = std::abs(p1.y() - p2.y());
+            qreal lift = std::max<qreal>(m_rowHeight, dy / 2.0 + m_rowHeight / 2.0);
+            qreal ctrlY = std::min(p1.y(), p2.y()) - lift;
+
+            QPointF ctrl(midX, ctrlY);
+            path.quadTo(ctrl, p2);
+
+            p.drawPath(path);
+
+            // Cabeza de flecha (triángulo) en el extremo p2
+            qreal angle = std::atan2(p2.y() - ctrlY, p2.x() - midX); // aprox dirección
+            qreal arrowSize = 10.0;
+
+            QPointF arrowP1 = p2 - QPointF(std::cos(angle - M_PI / 6) * arrowSize,
+                                           std::sin(angle - M_PI / 6) * arrowSize);
+            QPointF arrowP2 = p2 - QPointF(std::cos(angle + M_PI / 6) * arrowSize,
+                                           std::sin(angle + M_PI / 6) * arrowSize);
+
+            p.drawLine(p2, arrowP1);
+            p.drawLine(p2, arrowP2);
+        }
+    }
+
+    // --- Flecha en previsualización (modo ArrowAdd) ---
+    if (m_mode == Mode::ArrowAdd && m_arrowHasStart &&
+        m_arrowPreviewSignal >= 0 && m_arrowPreviewSample >= 0) {
+
+        QPen previewPen(Qt::red);
+        previewPen.setWidth(1);
+        previewPen.setStyle(Qt::DashLine);
+        p.setPen(previewPen);
+
+        QPointF p1 = signalSampleToPoint(m_arrowStartSignal,  m_arrowStartSample);
+        QPointF p2 = signalSampleToPoint(m_arrowPreviewSignal, m_arrowPreviewSample);
+
+        QPainterPath path;
+        path.moveTo(p1);
+
+        qreal midX = (p1.x() + p2.x()) / 2.0;
+        qreal dy   = std::abs(p1.y() - p2.y());
+        qreal lift = std::max<qreal>(m_rowHeight, dy / 2.0 + m_rowHeight / 2.0);
+        qreal ctrlY = std::min(p1.y(), p2.y()) - lift;
+        QPointF ctrl(midX, ctrlY);
+
+        path.quadTo(ctrl, p2);
+        p.drawPath(path);
+    }
+
 }
 
 void WaveView::drawSignal(QPainter &p, const Signal &sig, int index)
@@ -761,6 +831,81 @@ void WaveView::mousePressEvent(QMouseEvent *event)
                 return; // no seguimos con pintura ni nada más
             }
         }
+                // 2) Modo borrar flecha (ArrowDelete):
+        //    un clic cerca de una flecha borra SOLO esa flecha
+        if (m_mode == Mode::ArrowSub) {
+            const auto &arrows = m_doc->arrowList();
+            if (!arrows.empty()) {
+                QPointF click = event->pos();
+                int bestIndex = -1;
+                qreal bestDist2 = (qreal)(m_cellWidth * m_cellWidth); // umbral máximo
+
+                for (int i = 0; i < static_cast<int>(arrows.size()); ++i) {
+                    const Arrow &a = arrows[i];
+                    QPointF p1 = signalSampleToPoint(a.startSignal, a.startSample);
+                    QPointF p2 = signalSampleToPoint(a.endSignal,   a.endSample);
+
+                    // Aproximamos la curva por el segmento recto p1-p2
+                    QLineF seg(p1, p2);
+                    if (seg.length() <= 0.1)
+                        continue;
+
+                    // Proyección del click en el segmento
+                    QPointF v = p2 - p1;
+                    QPointF w = click - p1;
+                    qreal c1 = QPointF::dotProduct(w, v);
+                    qreal c2 = QPointF::dotProduct(v, v);
+                    qreal t  = (c2 > 0.0) ? (c1 / c2) : 0.0;
+                    t = std::max<qreal>(0.0, std::min<qreal>(1.0, t));
+
+                    QPointF proj = p1 + v * t;
+                    qreal dx = click.x() - proj.x();
+                    qreal dy = click.y() - proj.y();
+                    qreal dist2 = dx*dx + dy*dy;
+
+                    if (dist2 < bestDist2) {
+                        bestDist2 = dist2;
+                        bestIndex = i;
+                    }
+                }
+
+                if (bestIndex >= 0) {
+                    m_doc->subArrowById(arrows[bestIndex].id);
+                    return; // ya hemos borrado una flecha
+                }
+            }
+
+            // Si no había flecha cerca, no hacemos nada más en este modo
+            return;
+        }
+
+                // 2) Modo flecha: dos clics definen origen y destino
+        if (m_mode == Mode::ArrowAdd) {
+            if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
+
+                if (!m_arrowHasStart) {
+                    // Primer punto: origen
+                    m_arrowHasStart      = true;
+                    m_arrowStartSignal   = sigIdx;
+                    m_arrowStartSample   = sampleIdx;
+                    m_arrowPreviewSignal = sigIdx;
+                    m_arrowPreviewSample = sampleIdx;
+                    update();
+                } else {
+                    // Segundo punto: destino -> crear flecha
+                    m_doc->addArrow(m_arrowStartSignal, m_arrowStartSample,
+                                    sigIdx,             sampleIdx);
+
+                    m_arrowHasStart      = false;
+                    m_arrowStartSignal   = -1;
+                    m_arrowStartSample   = -1;
+                    m_arrowPreviewSignal = -1;
+                    m_arrowPreviewSample = -1;
+                    update();
+                }
+            }
+            return;
+        }
 
         // 2) Modos de MARCADORES (añadir / borrar)
         if (m_mode == Mode::MarkerAdd || m_mode == Mode::MarkerSub)
@@ -934,6 +1079,20 @@ void WaveView::mouseMoveEvent(QMouseEvent *event)
         }
         return;
     }
+        // 2) Modo ArrowAdd: mover segundo punto de la flecha (previsualización)
+    if (m_mode == Mode::ArrowAdd && m_arrowHasStart) {
+        int sigIdx = -1;
+        int sampleIdx = -1;
+        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
+            if (sigIdx != m_arrowPreviewSignal || sampleIdx != m_arrowPreviewSample) {
+                m_arrowPreviewSignal = sigIdx;
+                m_arrowPreviewSample = sampleIdx;
+                update();
+            }
+        }
+        return;
+    }
+
     // 2) Modo MarkerAdd: solo previsualizamos,
     //    no añadimos hasta el click (en mousePressEvent)
     if (m_mode == Mode::MarkerAdd)
@@ -1329,5 +1488,42 @@ void WaveView::setMarkerSubModeEnabled(bool en)
         m_mode = Mode::None;
     }
     m_markerPreviewSample = -1;
+    update();
+}
+
+void WaveView::setArrowModeEnabled(bool en)
+{
+    if (en) {
+        m_mode = Mode::ArrowAdd;
+    } else if (m_mode == Mode::ArrowAdd) {
+        m_mode = Mode::None;
+    }
+
+    m_arrowHasStart       = false;
+    m_arrowStartSignal    = -1;
+    m_arrowStartSample    = -1;
+    m_arrowPreviewSignal  = -1;
+    m_arrowPreviewSample  = -1;
+
+    update();
+}
+QPointF WaveView::signalSampleToPoint(int signalIndex, int sampleIndex) const
+{
+    // X en el INICIO del timestep (coincide con la línea vertical de la grid)
+    qreal x = m_leftMargin + sampleIndex * m_cellWidth;
+
+    // Y en el centro de la fila de la señal
+    qreal y = m_topMargin + (signalIndex + 0.5) * m_rowHeight;
+
+    return QPointF(x, y);
+}
+void WaveView::setArrowSubModeEnabled(bool en)
+{
+    if (en) {
+        m_mode = Mode::ArrowSub;
+    } else if (m_mode == Mode::ArrowSub) {
+        m_mode = Mode::None;
+    }
+    // No necesitamos estado especial como en ArrowAdd
     update();
 }

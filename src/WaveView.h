@@ -67,8 +67,15 @@ public slots:
     void setCutModeEnabled(bool en);  // enable/disable from the UI
     void setEraseModeEnabled(bool en);
 
+    //marker
     void setMarkerAddModeEnabled(bool en);     
     void setMarkerSubModeEnabled(bool en);
+
+    //arrow
+    void setArrowModeEnabled(bool en);
+    void setArrowSubModeEnabled(bool en); 
+    QPointF signalSampleToPoint(int signalIndex, int sampleIndex) const;
+
 
     // Horizontal zoom (changes the cell width)
     void zoomIn();
@@ -100,7 +107,9 @@ private:
         CutSelecting,
         Erasing,
         MarkerAdd,
-        MarkerSub
+        MarkerSub,
+        ArrowAdd,
+        ArrowSub
     };
 
     Mode m_mode;
@@ -124,6 +133,14 @@ private:
     int m_moveSignalIndex;
     
     int  m_markerPreviewSample;
+
+
+    //Arrow
+    bool m_arrowHasStart = false;
+    int  m_arrowStartSignal = -1;
+    int  m_arrowStartSample = -1;
+    int  m_arrowPreviewSignal = -1;
+    int  m_arrowPreviewSample = -1;
 
     // Optional size for export (exact content width/height)
     QSize m_exportSize;

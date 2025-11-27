@@ -389,12 +389,29 @@ int WaveDocument::pasteSignal(int destIndex)
 }
 void WaveDocument::removeSignal(int signalIndex)
 {
-    int count = static_cast<int>(m_signals.size());
-    if (signalIndex < 0 || signalIndex >= count)
+    int n = static_cast<int>(m_signals.size());
+    if (signalIndex < 0 || signalIndex >= n)
         return;
 
     m_signals.erase(m_signals.begin() + signalIndex);
-    emit dataChanged();   // para que WaveView se redibuje
+
+    // Eliminar flechas que usan esa señal
+    m_arrows.erase(
+        std::remove_if(m_arrows.begin(), m_arrows.end(),
+                       [signalIndex](const Arrow &a) {
+                           return a.startSignal == signalIndex ||
+                                  a.endSignal   == signalIndex;
+                       }),
+        m_arrows.end()
+    );
+
+    // Ajustar índices de flechas que están por debajo
+    for (Arrow &a : m_arrows) {
+        if (a.startSignal > signalIndex) a.startSignal--;
+        if (a.endSignal   > signalIndex) a.endSignal--;
+    }
+
+    emit dataChanged();
 }
 
 int WaveDocument::addMarker(int sampleIndex)
@@ -470,4 +487,54 @@ void WaveDocument::addMarkerFromLoad(int id, int sampleIndex)
 
     if (id >= m_nextMarkerId)
         m_nextMarkerId = id + 1;
+}
+int WaveDocument::addArrow(int startSignal, int startSample,
+                           int endSignal,   int endSample)
+{
+    int sigCount = static_cast<int>(m_signals.size());
+    if (startSignal < 0 || startSignal >= sigCount) return -1;
+    if (endSignal   < 0 || endSignal   >= sigCount) return -1;
+    if (startSample < 0 || startSample >= m_sampleCount) return -1;
+    if (endSample   < 0 || endSample   >= m_sampleCount) return -1;
+
+    Arrow a;
+    a.id          = m_nextArrowId++;
+    a.startSignal = startSignal;
+    a.startSample = startSample;
+    a.endSignal   = endSignal;
+    a.endSample   = endSample;
+
+    m_arrows.push_back(a);
+    emit dataChanged();
+    return a.id;
+}
+
+void WaveDocument::subArrowById(int arrowId)
+{
+    auto it = std::find_if(m_arrows.begin(), m_arrows.end(),
+                           [arrowId](const Arrow &a){ return a.id == arrowId; });
+    if (it == m_arrows.end())
+        return;
+
+    m_arrows.erase(it);
+
+    // Recalcular siguiente ID si quieres "compactar"
+    if (m_arrows.empty()) {
+        m_nextArrowId = 1;
+    } else {
+        int maxId = 0;
+        for (const Arrow &a : m_arrows) {
+            if (a.id > maxId) maxId = a.id;
+        }
+        m_nextArrowId = maxId + 1;
+    }
+
+    emit dataChanged();
+}
+
+void WaveDocument::clearArrows()
+{
+    m_arrows.clear();
+    m_nextArrowId = 1;
+    emit dataChanged();
 }

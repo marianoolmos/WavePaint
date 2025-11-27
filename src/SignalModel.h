@@ -86,6 +86,13 @@ struct Marker {
     int id;
     int sample;
 };
+struct Arrow {
+    int id;           // identificador unico
+    int startSignal;  // Indice de senyal origen
+    int startSample;  // timestamp origen
+    int endSignal;    // Indice de señal destino
+    int endSample;    // timestamp destino
+};
 
 class WaveDocument : public QObject
 {
@@ -128,6 +135,12 @@ public:
     void clearMarkers();
     void addMarkerFromLoad(int id, int sampleIndex);
 
+    const std::vector<Arrow> &arrowList() const { return m_arrows; }
+    int  addArrow(int startSignal, int startSample,
+                  int endSignal,   int endSample);
+    void subArrowById(int arrowId);
+    void clearArrows();
+
 
     void copySignal(int signalIndex);
     int  pasteSignal(int destIndex);
@@ -157,7 +170,10 @@ private:
     std::vector<Signal> m_vcdSignals;   // library of signals loaded from VCD
 
     std::vector<Marker> m_markers;
-int m_nextMarkerId = 1;
+    int m_nextMarkerId = 1;
+
+    std::vector<Arrow> m_arrows;
+    int m_nextArrowId = 1;
 
     bool   m_hasClipboardSignal = false;
     Signal m_clipboardSignal;

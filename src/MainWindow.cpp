@@ -40,7 +40,7 @@
 // CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//======================================================================
+//======================================================================    
 #include "MainWindow.h"
 #include "WaveView.h"
 #include <QToolBar>
@@ -217,6 +217,12 @@ void MainWindow::createToolBar()
     m_arrowAction->setCheckable(true);
     m_arrowAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
 
+    m_subArrowAction = tb->addAction(QString::fromUtf8("-↝"));
+    m_subArrowAction->setToolTip(tr("Delete Arrow"));
+    m_subArrowAction->setCheckable(true);
+    m_subArrowAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
+    tb->addSeparator();
+
     // Add Marker
     m_addMarkerAction = tb->addAction(QString::fromUtf8("+|"));
     m_addMarkerAction->setToolTip(tr("Add a marker"));
@@ -253,6 +259,11 @@ void MainWindow::createToolBar()
             this,                 &MainWindow::onAddMarkerToggled);
     connect(m_subMarkerAction, &QAction::toggled,
             this,                 &MainWindow::onSubMarkerToggled);
+
+    connect(m_arrowAction,        &QAction::toggled,
+            this,                 &MainWindow::onArrowToggled);
+    connect(m_subArrowAction,  &QAction::toggled,
+            this,                 &MainWindow::onSubArrowToggled);
 }
 
 void MainWindow::exportPng()
@@ -683,20 +694,49 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
 void WaveDocument::moveSignal(int fromIndex, int toIndex)
 {
-    int count = static_cast<int>(m_signals.size());
-    if (fromIndex < 0 || fromIndex >= count)
+    int n = static_cast<int>(m_signals.size());
+    if (fromIndex < 0 || fromIndex >= n ||
+        toIndex   < 0 || toIndex   >= n ||
+        fromIndex == toIndex) {
         return;
-    if (toIndex < 0 || toIndex >= count)
-        return;
-    if (fromIndex == toIndex)
-        return;
+    }
 
-    Signal s = m_signals[fromIndex];
+    // 1) Mover la señal en el vector m_signals
+    Signal sig = m_signals[fromIndex];
     m_signals.erase(m_signals.begin() + fromIndex);
-    m_signals.insert(m_signals.begin() + toIndex, s);
+    m_signals.insert(m_signals.begin() + toIndex, sig);
+
+    // 2) Actualizar los índices de las flechas
+    if (!m_arrows.empty()) {
+        for (Arrow &a : m_arrows) {
+
+            auto updateIndex = [&](int idx) -> int {
+                if (fromIndex < toIndex) {
+                    // Ej: [0 1 2 3 4], move 1 -> 3
+                    // index 1 pasa a 3
+                    // 2 y 3 bajan a 1 y 2
+                    if (idx == fromIndex)           return toIndex;
+                    if (idx > fromIndex && idx <= toIndex) return idx - 1;
+                    return idx;
+                } else {
+                    // fromIndex > toIndex
+                    // Ej: [0 1 2 3 4], move 3 -> 1
+                    // index 3 pasa a 1
+                    // 1 y 2 suben a 2 y 3
+                    if (idx == fromIndex)            return toIndex;
+                    if (idx >= toIndex && idx < fromIndex) return idx + 1;
+                    return idx;
+                }
+            };
+
+            a.startSignal = updateIndex(a.startSignal);
+            a.endSignal   = updateIndex(a.endSignal);
+        }
+    }
 
     emit dataChanged();
 }
+
 void MainWindow::onAddMarkerToggled(bool enabled)
 {
     if (!m_waveView)
@@ -769,5 +809,72 @@ void MainWindow::onSubMarkerToggled(bool enabled)
     else
     {
         m_waveView->setMarkerSubModeEnabled(false);
+    }
+}
+void MainWindow::onArrowToggled(bool enabled)
+{
+    if (!m_waveView)
+        return;
+
+    if (enabled) {
+        // desactivar otros modos exclusivos
+        if (m_cutAction) {
+            m_cutAction->blockSignals(true);
+            m_cutAction->setChecked(false);
+            m_cutAction->blockSignals(false);
+        }
+        if (m_eraseAction) {
+            m_eraseAction->blockSignals(true);
+            m_eraseAction->setChecked(false);
+            m_eraseAction->blockSignals(false);
+        }
+        if (m_addMarkerAction) {
+            m_addMarkerAction->blockSignals(true);
+            m_addMarkerAction->setChecked(false);
+            m_addMarkerAction->blockSignals(false);
+        }
+        if (m_subMarkerAction) {
+            m_subMarkerAction->blockSignals(true);
+            m_subMarkerAction->setChecked(false);
+            m_subMarkerAction->blockSignals(false);
+        }
+
+        m_waveView->setCutModeEnabled(false);
+        m_waveView->setEraseModeEnabled(false);
+        m_waveView->setMarkerAddModeEnabled(false);
+        m_waveView->setMarkerSubModeEnabled(false);
+        m_waveView->setArrowModeEnabled(true);
+    } else {
+        m_waveView->setArrowModeEnabled(false);
+    }
+}
+void MainWindow::onSubArrowToggled(bool enabled)
+{
+    if (!m_waveView)
+        return;
+
+    if (enabled) {
+        // Desactivamos otros modos exclusivos
+        auto uncheck = [](QAction *act){
+            if (!act) return;
+            act->blockSignals(true);
+            act->setChecked(false);
+            act->blockSignals(false);
+        };
+
+        uncheck(m_cutAction);
+        uncheck(m_eraseAction);
+        uncheck(m_addMarkerAction);
+        uncheck(m_subMarkerAction);
+        uncheck(m_arrowAction);
+
+        m_waveView->setCutModeEnabled(false);
+        m_waveView->setEraseModeEnabled(false);
+        m_waveView->setMarkerAddModeEnabled(false);
+        m_waveView->setMarkerSubModeEnabled(false);
+        m_waveView->setArrowModeEnabled(false);
+        m_waveView->setArrowSubModeEnabled(true);
+    } else {
+        m_waveView->setArrowSubModeEnabled(false);
     }
 }

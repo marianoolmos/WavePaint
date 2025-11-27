@@ -81,6 +81,7 @@ private:
     QScrollArea *m_waveScroll;
     QAction *m_cutAction;
     QAction *m_arrowAction;
+    QAction *m_subArrowAction;
     QAction *m_selAction;
     QAction *m_addMarkerAction;
     QAction *m_subMarkerAction;
@@ -107,6 +108,8 @@ private slots:
     void onEraseToggled(bool enabled);
     void onAddMarkerToggled(bool enabled);
     void onSubMarkerToggled(bool enabled);
+    void onArrowToggled(bool enabled);
+    void onSubArrowToggled(bool enabled);
 
     void cancelModes();
 };

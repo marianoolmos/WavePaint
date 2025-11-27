@@ -14,7 +14,7 @@
 // Project:       WavePaint
 // File:          WaveJsonIO.cpp
 // Description:   Save / load WaveDocument to JSON (.wp / .json),
-//                incluyendo señales y marcadores.
+//                incluyendo señales, marcadores y flechas.
 //======================================================================
 
 #include "io/WaveJsonIO.h"
@@ -71,6 +71,20 @@ bool WaveJsonIO::saveToFile(const WaveDocument &doc, const QString &fileName)
     }
     root["markers"] = markerArray;
 
+    // --- Flechas ---
+    // Cada flecha va de (startSignal,startSample) a (endSignal,endSample)
+    QJsonArray arrowArray;
+    for (const Arrow &a : doc.m_arrows) {
+        QJsonObject ao;
+        ao["id"]          = a.id;
+        ao["startSignal"] = a.startSignal;
+        ao["startSample"] = a.startSample;
+        ao["endSignal"]   = a.endSignal;
+        ao["endSample"]   = a.endSample;
+        arrowArray.append(ao);
+    }
+    root["arrows"] = arrowArray;
+
     QJsonDocument docJson(root);
     f.write(docJson.toJson(QJsonDocument::Indented));
     return true;
@@ -99,7 +113,9 @@ bool WaveJsonIO::loadFromFile(WaveDocument &doc, const QString &fileName)
     doc.m_signals.clear();
     doc.m_vcdSignals.clear();
     doc.m_markers.clear();
+    doc.m_arrows.clear();
     doc.m_nextMarkerId = 1;
+    doc.m_nextArrowId  = 1;
 
     // --- Cargar señales ---
     QJsonArray sigArray = root.value("signals").toArray();
@@ -131,28 +147,67 @@ bool WaveJsonIO::loadFromFile(WaveDocument &doc, const QString &fileName)
     }
 
     // --- Cargar marcadores (si existen en el fichero) ---
-    QJsonArray markerArray = root.value("markers").toArray();
-    for (const QJsonValue &v : markerArray) {
-        if (!v.isObject())
-            continue;
+    {
+        QJsonArray markerArray = root.value("markers").toArray();
+        for (const QJsonValue &v : markerArray) {
+            if (!v.isObject())
+                continue;
 
-        QJsonObject mo = v.toObject();
+            QJsonObject mo = v.toObject();
 
-        int id     = mo.value("id").toInt(0);
-        int sample = mo.value("sample").toInt(-1);
+            int id     = mo.value("id").toInt(0);
+            int sample = mo.value("sample").toInt(-1);
 
-        if (id <= 0)
-            continue;
-        if (sample < 0 || sample >= doc.m_sampleCount)
-            continue;
+            if (id <= 0)
+                continue;
+            if (sample < 0 || sample >= doc.m_sampleCount)
+                continue;
 
-        Marker m;
-        m.id     = id;
-        m.sample = sample;
-        doc.m_markers.push_back(m);
+            Marker m;
+            m.id     = id;
+            m.sample = sample;
+            doc.m_markers.push_back(m);
 
-        if (id >= doc.m_nextMarkerId)
-            doc.m_nextMarkerId = id + 1;
+            if (id >= doc.m_nextMarkerId)
+                doc.m_nextMarkerId = id + 1;
+        }
+    }
+
+    // --- Cargar flechas (si existen en el fichero) ---
+    {
+        QJsonArray arrowArray = root.value("arrows").toArray();
+        int sigCount = static_cast<int>(doc.m_signals.size());
+
+        for (const QJsonValue &v : arrowArray) {
+            if (!v.isObject())
+                continue;
+
+            QJsonObject ao = v.toObject();
+            int id          = ao.value("id").toInt(0);
+            int startSignal = ao.value("startSignal").toInt(-1);
+            int startSample = ao.value("startSample").toInt(-1);
+            int endSignal   = ao.value("endSignal").toInt(-1);
+            int endSample   = ao.value("endSample").toInt(-1);
+
+            if (id <= 0)
+                continue;
+
+            if (startSignal < 0 || startSignal >= sigCount) continue;
+            if (endSignal   < 0 || endSignal   >= sigCount) continue;
+            if (startSample < 0 || startSample >= doc.m_sampleCount) continue;
+            if (endSample   < 0 || endSample   >= doc.m_sampleCount) continue;
+
+            Arrow a;
+            a.id          = id;
+            a.startSignal = startSignal;
+            a.startSample = startSample;
+            a.endSignal   = endSignal;
+            a.endSample   = endSample;
+            doc.m_arrows.push_back(a);
+
+            if (id >= doc.m_nextArrowId)
+                doc.m_nextArrowId = id + 1;
+        }
     }
 
     emit doc.dataChanged();
