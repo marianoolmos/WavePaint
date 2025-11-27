@@ -82,6 +82,10 @@ struct Signal
             color = QColor(0, 0, 180);
     }
 };
+struct Marker {
+    int id;
+    int sample;
+};
 
 class WaveDocument : public QObject
 {
@@ -115,11 +119,23 @@ public:
     void removeSignal(int signalIndex);
     void moveSignal(int fromIndex, int toIndex);
 
+    const std::vector<Marker> &markerList() const { return m_markers; }
+
+
+    int  addMarker(int sampleIndex);          
+    void subMarkerById(int markerId);      
+
+    void clearMarkers();
+    void addMarkerFromLoad(int id, int sampleIndex);
+
+
     void copySignal(int signalIndex);
     int  pasteSignal(int destIndex);
     bool hasClipboardSignal() const { return m_hasClipboardSignal; }
     void clear();
     void clearSignals();
+
+    
 
     // Add a visible signal from the VCD library
     int addSignalFromVcd(const QString &fullName);
@@ -139,6 +155,9 @@ private:
     int m_sampleCount;
     std::vector<Signal> m_signals;      // visible signals in the waveform
     std::vector<Signal> m_vcdSignals;   // library of signals loaded from VCD
+
+    std::vector<Marker> m_markers;
+int m_nextMarkerId = 1;
 
     bool   m_hasClipboardSignal = false;
     Signal m_clipboardSignal;

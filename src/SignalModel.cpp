@@ -396,3 +396,78 @@ void WaveDocument::removeSignal(int signalIndex)
     m_signals.erase(m_signals.begin() + signalIndex);
     emit dataChanged();   // para que WaveView se redibuje
 }
+
+int WaveDocument::addMarker(int sampleIndex)
+{
+    if (sampleIndex < 0 || sampleIndex >= m_sampleCount)
+        return -1;
+
+    // Si ya hay un marcador en ese sample, devolvemos su id
+    for (const Marker &m : m_markers) {
+        if (m.sample == sampleIndex)
+            return m.id;
+    }
+
+    Marker m;
+    m.id     = m_nextMarkerId++;
+    m.sample = sampleIndex;
+
+    m_markers.push_back(m);
+
+    // Opcional: ordenarlos por sample
+    std::sort(m_markers.begin(), m_markers.end(),
+              [](const Marker &a, const Marker &b) {
+                  return a.sample < b.sample;
+              });
+
+    emit dataChanged();
+    return m.id;
+}
+
+void WaveDocument::subMarkerById(int markerId)
+{
+    auto it = std::find_if(m_markers.begin(), m_markers.end(),
+                           [markerId](const Marker &m) { return m.id == markerId; });
+    if (it == m_markers.end())
+        return;
+
+    m_markers.erase(it);
+
+    // 👇 Recalcular el siguiente ID
+    if (m_markers.empty()) {
+        // Si ya no hay marcadores, empezamos de nuevo en 1
+        m_nextMarkerId = 1;
+    } else {
+        // Si aún quedan, ponemos el siguiente al máximo + 1
+        int maxId = 0;
+        for (const Marker &m : m_markers) {
+            if (m.id > maxId)
+                maxId = m.id;
+        }
+        m_nextMarkerId = maxId + 1;
+    }
+
+    emit dataChanged();
+}
+
+
+void WaveDocument::clearMarkers()
+{
+    m_markers.clear();
+    m_nextMarkerId = 1;
+    emit dataChanged();
+}
+
+void WaveDocument::addMarkerFromLoad(int id, int sampleIndex)
+{
+    if (sampleIndex < 0 || sampleIndex >= m_sampleCount)
+        return;
+
+    Marker m;
+    m.id     = id;
+    m.sample = sampleIndex;
+    m_markers.push_back(m);
+
+    if (id >= m_nextMarkerId)
+        m_nextMarkerId = id + 1;
+}

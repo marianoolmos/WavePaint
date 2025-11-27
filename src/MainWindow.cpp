@@ -1,15 +1,15 @@
 // ========================================================================================
-//  /@@      /@@                               /@@@@@@@           /@@             /@@    
-// | @@  /@ | @@                              | @@__  @@         |__/            | @@    
-// | @@ /@@@| @@  /@@@@@@  /@@    /@@ /@@@@@@ | @@  \ @@ /@@@@@@  /@@ /@@@@@@@  /@@@@@@  
-// | @@/@@ @@ @@ |____  @@|  @@  /@@//@@__  @@| @@@@@@@/|____  @@| @@| @@__  @@|_  @@_/  
-// | @@@@_  @@@@  /@@@@@@@ \  @@/@@/| @@@@@@@@| @@____/  /@@@@@@@| @@| @@  \ @@  | @@    
+//  /@@      /@@                               /@@@@@@@           /@@             /@@
+// | @@  /@ | @@                              | @@__  @@         |__/            | @@
+// | @@ /@@@| @@  /@@@@@@  /@@    /@@ /@@@@@@ | @@  \ @@ /@@@@@@  /@@ /@@@@@@@  /@@@@@@
+// | @@/@@ @@ @@ |____  @@|  @@  /@@//@@__  @@| @@@@@@@/|____  @@| @@| @@__  @@|_  @@_/
+// | @@@@_  @@@@  /@@@@@@@ \  @@/@@/| @@@@@@@@| @@____/  /@@@@@@@| @@| @@  \ @@  | @@
 // | @@@/ \  @@@ /@@__  @@  \  @@@/ | @@_____/| @@      /@@__  @@| @@| @@  | @@  | @@ /@@
 // | @@/   \  @@|  @@@@@@@   \  @/  |  @@@@@@@| @@     |  @@@@@@@| @@| @@  | @@  |  @@@@/
-// |__/     \__/ \_______/    \_/    \_______/|__/      \_______/|__/|__/  |__/   \___/  
-//                                                                                       
-// ___|HHHHHHHHH|______|HHHHHHHHH|___ ___|HHHHHHHHH|___ ___|HHHHHHHHH|___ ___|HHHHHHHHH|___ 
-//                                                                                       
+// |__/     \__/ \_______/    \_/    \_______/|__/      \_______/|__/|__/  |__/   \___/
+//
+// ___|HHHHHHHHH|______|HHHHHHHHH|___ ___|HHHHHHHHH|___ ___|HHHHHHHHH|___ ___|HHHHHHHHH|___
+//
 //
 // Project:       WavePaint
 // Description:
@@ -75,7 +75,7 @@ MainWindow::MainWindow(QWidget *parent)
       m_waveScroll(nullptr),
       m_cutAction(nullptr),
       m_eraseAction(nullptr),
-      m_viewHierarchyAction(nullptr) 
+      m_viewHierarchyAction(nullptr)
 {
     createUi();
     createMenus();
@@ -83,8 +83,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     statusBar()->showMessage(tr("Ready"));
 }
-
-
 
 void MainWindow::createUi()
 {
@@ -124,7 +122,7 @@ void MainWindow::createUi()
 
     // By default,dont show hierarchy on the left.
     QList<int> sizes;
-    sizes << 0 << width();   // izquierda = 0, derecha = todo
+    sizes << 0 << width(); // izquierda = 0, derecha = todo
     m_splitter->setSizes(sizes);
 
     // Connect hierarchy selection to the signal list
@@ -135,9 +133,6 @@ void MainWindow::createUi()
     connect(m_signalList, &QListWidget::itemDoubleClicked,
             this, &MainWindow::onSignalDoubleClicked);
 }
-
-
-
 
 void MainWindow::createMenus()
 {
@@ -160,7 +155,7 @@ void MainWindow::createMenus()
     QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
     QAction *clearAct = editMenu->addAction(tr("Clear all signals"), this, &MainWindow::clearAllSignals);
     clearAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_L));
-    
+
     Q_UNUSED(clearAct);
 
     QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
@@ -168,15 +163,12 @@ void MainWindow::createMenus()
     m_viewHierarchyAction->setCheckable(true);
     m_viewHierarchyAction->setChecked(false); // off by default
     m_viewHierarchyAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_H));
-    connect(m_viewHierarchyAction, &QAction::toggled,this, &MainWindow::toggleHierarchyPanel);
+    connect(m_viewHierarchyAction, &QAction::toggled, this, &MainWindow::toggleHierarchyPanel);
 
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
     QAction *helpAct = helpMenu->addAction(tr("Documentation"), this, &MainWindow::linkToDoc);
     newAct->setShortcut(QKeySequence::New);
 }
-
-
-
 
 void MainWindow::createToolBar()
 {
@@ -226,10 +218,16 @@ void MainWindow::createToolBar()
     m_arrowAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
 
     // Add Marker
-    m_markerAction = tb->addAction(QString::fromUtf8("+|"));
-    m_markerAction->setToolTip(tr("Add a marker"));
-    m_markerAction->setCheckable(true);
-    m_markerAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
+    m_addMarkerAction = tb->addAction(QString::fromUtf8("+|"));
+    m_addMarkerAction->setToolTip(tr("Add a marker"));
+    m_addMarkerAction->setCheckable(true);
+    m_addMarkerAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
+
+    // Sub Marker
+    m_subMarkerAction = tb->addAction(QString::fromUtf8("-|"));
+    m_subMarkerAction->setToolTip(tr("Add a marker"));
+    m_subMarkerAction->setCheckable(true);
+    m_subMarkerAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
 
     tb->addSeparator();
 
@@ -240,7 +238,7 @@ void MainWindow::createToolBar()
     m_sampleSpin->setToolTip(tr("Number of time steps"));
 
     tb->addWidget(m_sampleSpin);
-    
+
     // Connections
     connect(zoomOutAct, &QAction::triggered, m_waveView, &WaveView::zoomOut);
     connect(zoomInAct, &QAction::triggered, m_waveView, &WaveView::zoomIn);
@@ -250,11 +248,12 @@ void MainWindow::createToolBar()
 
     connect(m_sampleSpin, QOverload<int>::of(&QSpinBox::valueChanged),
             &m_document, &WaveDocument::setSampleCount);
+
+    connect(m_addMarkerAction,    &QAction::toggled,
+            this,                 &MainWindow::onAddMarkerToggled);
+    connect(m_subMarkerAction, &QAction::toggled,
+            this,                 &MainWindow::onSubMarkerToggled);
 }
-
-
-
-
 
 void MainWindow::exportPng()
 {
@@ -265,13 +264,13 @@ void MainWindow::exportPng()
         this,
         tr("Export as PNG"),
         QString(),
-        tr("PNG Images (*.png)")
-    );
+        tr("PNG Images (*.png)"));
 
     if (fileName.isEmpty())
         return;
 
-    if (!fileName.endsWith(".png", Qt::CaseInsensitive)) {
+    if (!fileName.endsWith(".png", Qt::CaseInsensitive))
+    {
         fileName += ".png";
     }
 
@@ -285,21 +284,24 @@ void MainWindow::exportPng()
         options,
         0,
         false,
-        &ok
-    );
+        &ok);
 
     if (!ok)
         return;
 
     QColor bg = Qt::white;
-    if (choice.toLower().contains("black")) {
+    if (choice.toLower().contains("black"))
+    {
         bg = Qt::black;
     }
 
     bool result = m_waveView->exportToPng(fileName, bg);
-    if (result) {
+    if (result)
+    {
         statusBar()->showMessage(tr("Exported to %1").arg(fileName), 3000);
-    } else {
+    }
+    else
+    {
         statusBar()->showMessage(tr("Export failed"), 3000);
     }
 }
@@ -310,8 +312,7 @@ void MainWindow::openFile()
         this,
         tr("Open waveform"),
         QString(),
-        tr("WavePaint files (*.wp *.json *.vcd *.fst *.ghw);;All files (*)")
-    );
+        tr("WavePaint files (*.wp *.json *.vcd *.fst *.ghw);;All files (*)"));
     if (fileName.isEmpty())
         return;
 
@@ -320,38 +321,56 @@ void MainWindow::openFile()
 
     bool ok = false;
 
-    if (ext == "vcd") {
+    if (ext == "vcd")
+    {
         ok = m_document.loadFromVcd(fileName);
-    } else if (ext == "wp" || ext == "json" || ext.isEmpty()) {
+    }
+    else if (ext == "wp" || ext == "json" || ext.isEmpty())
+    {
         ok = m_document.loadFromFile(fileName);
-    } else if (ext == "fst" || ext == "ghw") {
+    }
+    else if (ext == "fst" || ext == "ghw")
+    {
         // FST/GHW not implemented yet: could be converted to VCD externally in the future
         ok = false;
-    } else {
+    }
+    else
+    {
         // Try as JSON/own format
         ok = m_document.loadFromFile(fileName);
     }
 
-
-    if (ok) {
+    if (ok)
+    {
         m_currentFile = fileName;
-        if (m_sampleSpin) {
+        if (m_sampleSpin)
+        {
             m_sampleSpin->setValue(m_document.sampleCount());
         }
 
-        if (ext == "vcd") {
+        if (ext == "vcd")
+        {
             rebuildHierarchy();
-        } else {
+        }
+        else
+        {
             // For other formats, clear the hierarchy but keep the splitter
-            if (m_hierarchyTree) m_hierarchyTree->clear();
-            if (m_signalList) m_signalList->clear();
+            if (m_hierarchyTree)
+                m_hierarchyTree->clear();
+            if (m_signalList)
+                m_signalList->clear();
         }
 
         statusBar()->showMessage(tr("Loaded %1").arg(fileName), 3000);
-    } else {
-        if (ext == "fst" || ext == "ghw") {
+    }
+    else
+    {
+        if (ext == "fst" || ext == "ghw")
+        {
             statusBar()->showMessage(tr("FST/GHW import not implemented yet (VCD supported)."), 5000);
-        } else {
+        }
+        else
+        {
             statusBar()->showMessage(tr("Failed to load %1").arg(fileName), 3000);
         }
     }
@@ -363,44 +382,48 @@ void MainWindow::saveFileAs()
         this,
         tr("Save waveform"),
         QString(),
-        tr("WavePaint files (*.wp *.json);;All files (*)")
-    );
+        tr("WavePaint files (*.wp *.json);;All files (*)"));
     if (fileName.isEmpty())
         return;
 
     if (!fileName.endsWith(".wp", Qt::CaseInsensitive) &&
-        !fileName.endsWith(".json", Qt::CaseInsensitive)) {
+        !fileName.endsWith(".json", Qt::CaseInsensitive))
+    {
         fileName += ".wp";
     }
 
-    if (m_document.saveToFile(fileName)) {
+    if (m_document.saveToFile(fileName))
+    {
         m_currentFile = fileName;
         statusBar()->showMessage(tr("Saved to %1").arg(fileName), 3000);
-    } else {
+    }
+    else
+    {
         statusBar()->showMessage(tr("Failed to save %1").arg(fileName), 3000);
     }
 }
 
-
-
 void MainWindow::newDocument()
 {
     m_document.clear();
-    if (m_sampleSpin) {
+    if (m_sampleSpin)
+    {
         m_sampleSpin->setValue(m_document.sampleCount());
     }
-    if (m_hierarchyTree) m_hierarchyTree->clear();
-    if (m_signalList) m_signalList->clear();
+    if (m_hierarchyTree)
+        m_hierarchyTree->clear();
+    if (m_signalList)
+        m_signalList->clear();
     statusBar()->showMessage(tr("New document"), 2000);
 }
-
-
 
 void MainWindow::clearAllSignals()
 {
     m_document.clearSignals();
-    if (m_hierarchyTree) m_hierarchyTree->clear();
-    if (m_signalList) m_signalList->clear();
+    if (m_hierarchyTree)
+        m_hierarchyTree->clear();
+    if (m_signalList)
+        m_signalList->clear();
     statusBar()->showMessage(tr("All signals cleared"), 2000);
 }
 void MainWindow::toggleHierarchyPanel(bool visible)
@@ -412,13 +435,17 @@ void MainWindow::toggleHierarchyPanel(bool visible)
     if (sizes.size() < 2)
         return;
 
-    if (visible) {
+    if (visible)
+    {
         // Darle un ancho razonable al panel izquierdo
-        if (sizes[0] == 0) {
+        if (sizes[0] == 0)
+        {
             sizes[0] = width() / 4;
             sizes[1] = width() - sizes[0];
         }
-    } else {
+    }
+    else
+    {
         // Colapsar el panel izquierdo
         sizes[0] = 0;
         sizes[1] = width();
@@ -429,7 +456,7 @@ void MainWindow::toggleHierarchyPanel(bool visible)
 
 void MainWindow::linkToDoc()
 {
-    const QUrl url("https://github.com/marianoolmos/WavePaint"); 
+    const QUrl url("https://github.com/marianoolmos/WavePaint");
     QDesktopServices::openUrl(url);
 }
 
@@ -446,9 +473,10 @@ void MainWindow::rebuildHierarchy()
         return;
 
     // Build hierarchy tree from names separated by '.'
-    QMap<QString, QTreeWidgetItem*> pathToItem;
+    QMap<QString, QTreeWidgetItem *> pathToItem;
 
-    for (const Signal &s : sigs) {
+    for (const Signal &s : sigs)
+    {
         QString fullName = s.name;
         if (fullName.isEmpty())
             continue;
@@ -462,9 +490,11 @@ void MainWindow::rebuildHierarchy()
 
         QString pathSoFar;
         QTreeWidgetItem *parentItem = nullptr;
-        for (const QString &part : moduleParts) {
+        for (const QString &part : moduleParts)
+        {
             pathSoFar = pathSoFar.isEmpty() ? part : pathSoFar + "." + part;
-            if (!pathToItem.contains(pathSoFar)) {
+            if (!pathToItem.contains(pathSoFar))
+            {
                 QTreeWidgetItem *item = new QTreeWidgetItem();
                 item->setText(0, part);
                 if (parentItem)
@@ -480,10 +510,13 @@ void MainWindow::rebuildHierarchy()
     m_hierarchyTree->expandAll();
 
     // Ensure left panel remains visible
-    if (m_splitter) {
+    if (m_splitter)
+    {
         QList<int> sizes = m_splitter->sizes();
-        if (sizes.size() >= 2) {
-            if (sizes[0] == 0) {
+        if (sizes.size() >= 2)
+        {
+            if (sizes[0] == 0)
+            {
                 sizes[0] = width() / 3;
                 sizes[1] = width() - sizes[0];
                 m_splitter->setSizes(sizes);
@@ -504,14 +537,16 @@ void MainWindow::onHierarchySelectionChanged(QTreeWidgetItem *current, QTreeWidg
     // Rebuild the selected module path (concatenate texts up to the root)
     QStringList chain;
     QTreeWidgetItem *it = current;
-    while (it) {
+    while (it)
+    {
         chain.prepend(it->text(0));
         it = it->parent();
     }
     QString modulePath = chain.join('.');
 
     const auto &sigs = m_document.vcdSignalList();
-    for (const Signal &s : sigs) {
+    for (const Signal &s : sigs)
+    {
         QString fullName = s.name;
         if (fullName.isEmpty())
             continue;
@@ -524,13 +559,13 @@ void MainWindow::onHierarchySelectionChanged(QTreeWidgetItem *current, QTreeWidg
         parts.removeLast();
         QString sigModulePath = parts.join('.');
 
-        if (sigModulePath == modulePath) {
+        if (sigModulePath == modulePath)
+        {
             QListWidgetItem *item = new QListWidgetItem(leaf, m_signalList);
             item->setToolTip(fullName);
         }
     }
 }
-
 
 void MainWindow::onSignalDoubleClicked(QListWidgetItem *item)
 {
@@ -546,7 +581,8 @@ void MainWindow::onSignalDoubleClicked(QListWidgetItem *item)
 
     QStringList chain;
     QTreeWidgetItem *it = current;
-    while (it) {
+    while (it)
+    {
         chain.prepend(it->text(0));
         it = it->parent();
     }
@@ -557,28 +593,34 @@ void MainWindow::onSignalDoubleClicked(QListWidgetItem *item)
 
     // Add signal visible from the VCD library
     int idx = m_document.addSignalFromVcd(fullName);
-    if (idx < 0) {
+    if (idx < 0)
+    {
         statusBar()->showMessage(tr("Signal %1 not found in VCD library").arg(fullName), 3000);
-    } else {
+    }
+    else
+    {
         statusBar()->showMessage(tr("Added signal %1").arg(fullName), 2000);
     }
 }
-
 
 void MainWindow::onCutToggled(bool enabled)
 {
     if (!m_waveView)
         return;
 
-    if (enabled) {
-        if (m_eraseAction) {
+    if (enabled)
+    {
+        if (m_eraseAction)
+        {
             m_eraseAction->blockSignals(true);
             m_eraseAction->setChecked(false);
             m_eraseAction->blockSignals(false);
         }
         m_waveView->setEraseModeEnabled(false);
         m_waveView->setCutModeEnabled(true);
-    } else {
+    }
+    else
+    {
         m_waveView->setCutModeEnabled(false);
     }
 }
@@ -588,15 +630,19 @@ void MainWindow::onEraseToggled(bool enabled)
     if (!m_waveView)
         return;
 
-    if (enabled) {
-        if (m_cutAction) {
+    if (enabled)
+    {
+        if (m_cutAction)
+        {
             m_cutAction->blockSignals(true);
             m_cutAction->setChecked(false);
             m_cutAction->blockSignals(false);
         }
         m_waveView->setCutModeEnabled(false);
         m_waveView->setEraseModeEnabled(true);
-    } else {
+    }
+    else
+    {
         m_waveView->setEraseModeEnabled(false);
     }
 }
@@ -606,12 +652,14 @@ void MainWindow::cancelModes()
     if (!m_waveView)
         return;
 
-    if (m_cutAction) {
+    if (m_cutAction)
+    {
         m_cutAction->blockSignals(true);
         m_cutAction->setChecked(false);
         m_cutAction->blockSignals(false);
     }
-    if (m_eraseAction) {
+    if (m_eraseAction)
+    {
         m_eraseAction->blockSignals(true);
         m_eraseAction->setChecked(false);
         m_eraseAction->blockSignals(false);
@@ -623,7 +671,8 @@ void MainWindow::cancelModes()
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Escape) {
+    if (event->key() == Qt::Key_Escape)
+    {
         cancelModes();
         event->accept();
         return;
@@ -635,13 +684,90 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 void WaveDocument::moveSignal(int fromIndex, int toIndex)
 {
     int count = static_cast<int>(m_signals.size());
-    if (fromIndex < 0 || fromIndex >= count) return;
-    if (toIndex   < 0 || toIndex   >= count) return;
-    if (fromIndex == toIndex) return;
+    if (fromIndex < 0 || fromIndex >= count)
+        return;
+    if (toIndex < 0 || toIndex >= count)
+        return;
+    if (fromIndex == toIndex)
+        return;
 
     Signal s = m_signals[fromIndex];
     m_signals.erase(m_signals.begin() + fromIndex);
     m_signals.insert(m_signals.begin() + toIndex, s);
 
     emit dataChanged();
+}
+void MainWindow::onAddMarkerToggled(bool enabled)
+{
+    if (!m_waveView)
+        return;
+
+    if (enabled)
+    {
+        // Desactivar otros modos exclusivos
+        if (m_cutAction)
+        {
+            m_cutAction->blockSignals(true);
+            m_cutAction->setChecked(false);
+            m_cutAction->blockSignals(false);
+        }
+        if (m_eraseAction)
+        {
+            m_eraseAction->blockSignals(true);
+            m_eraseAction->setChecked(false);
+            m_eraseAction->blockSignals(false);
+        }
+        if (m_subMarkerAction)
+        {
+            m_subMarkerAction->blockSignals(true);
+            m_subMarkerAction->setChecked(false);
+            m_subMarkerAction->blockSignals(false);
+        }
+
+        m_waveView->setCutModeEnabled(false);
+        m_waveView->setEraseModeEnabled(false);
+        m_waveView->setMarkerSubModeEnabled(false);
+        m_waveView->setMarkerAddModeEnabled(true);
+    }
+    else
+    {
+        m_waveView->setMarkerAddModeEnabled(false);
+    }
+}
+
+void MainWindow::onSubMarkerToggled(bool enabled)
+{
+    if (!m_waveView)
+        return;
+
+    if (enabled)
+    {
+        if (m_cutAction)
+        {
+            m_cutAction->blockSignals(true);
+            m_cutAction->setChecked(false);
+            m_cutAction->blockSignals(false);
+        }
+        if (m_eraseAction)
+        {
+            m_eraseAction->blockSignals(true);
+            m_eraseAction->setChecked(false);
+            m_eraseAction->blockSignals(false);
+        }
+        if (m_addMarkerAction)
+        {
+            m_addMarkerAction->blockSignals(true);
+            m_addMarkerAction->setChecked(false);
+            m_addMarkerAction->blockSignals(false);
+        }
+
+        m_waveView->setCutModeEnabled(false);
+        m_waveView->setEraseModeEnabled(false);
+        m_waveView->setMarkerAddModeEnabled(false);
+        m_waveView->setMarkerSubModeEnabled(true);
+    }
+    else
+    {
+        m_waveView->setMarkerSubModeEnabled(false);
+    }
 }

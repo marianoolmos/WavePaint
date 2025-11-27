@@ -82,7 +82,8 @@ private:
     QAction *m_cutAction;
     QAction *m_arrowAction;
     QAction *m_selAction;
-    QAction *m_markerAction;
+    QAction *m_addMarkerAction;
+    QAction *m_subMarkerAction;
     QAction *m_eraseAction;
 
     void createUi();
@@ -104,6 +105,9 @@ private slots:
     void onSignalDoubleClicked(QListWidgetItem *item);
     void onCutToggled(bool enabled);
     void onEraseToggled(bool enabled);
+    void onAddMarkerToggled(bool enabled);
+    void onSubMarkerToggled(bool enabled);
+
     void cancelModes();
 };
 

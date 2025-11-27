@@ -62,7 +62,7 @@ WaveView::WaveView(WaveDocument *doc, QWidget *parent)
       m_rowHeight(40),
       m_cellWidth(20),
       m_leftMargin(100),
-      m_topMargin(20),
+      m_topMargin(34),
       m_mode(Mode::None),
       m_selSignal(-1),
       m_selStartSample(-1),
@@ -74,6 +74,7 @@ WaveView::WaveView(WaveDocument *doc, QWidget *parent)
       m_cutCurrentSample(-1),
       m_isMovingSignal(false),
       m_moveSignalIndex(-1),
+      m_markerPreviewSample(-1),
       m_exportSize(),
       m_exportBackground()
 {
@@ -297,6 +298,10 @@ void WaveView::paintEvent(QPaintEvent *event)
     // Time axis (sample indices)
     p.setPen(axisColor);
     QFontMetrics fm(p.font());
+    // Colocamos los números de tiempo bien arriba
+    int axisTextY = m_topMargin - fm.height() * 2 - 4;
+    if (axisTextY < fm.ascent())
+        axisTextY = fm.ascent();
 
     int labelStep = 1;
     if (sampleCount > 200)
@@ -313,9 +318,8 @@ void WaveView::paintEvent(QPaintEvent *event)
         int x = m_leftMargin + t * m_cellWidth;
         QString label = QString::number(t);
         int tw = fm.horizontalAdvance(label);
-        p.drawText(x + (m_cellWidth - tw) / 2, m_topMargin - 5, label);
+        p.drawText(x + (m_cellWidth - tw) / 2, axisTextY, label);
     }
-
     // Vertical grid (dashed lines)
     QPen gridPen(QColor(220, 220, 220));
     gridPen.setStyle(Qt::DashLine);
@@ -362,6 +366,69 @@ void WaveView::paintEvent(QPaintEvent *event)
             int x1 = m_leftMargin + m_cutCurrentSample * m_cellWidth;
             p.drawLine(x1, m_topMargin, x1, h);
         }
+    }
+    if (m_mode == Mode::MarkerAdd && m_markerPreviewSample >= 0 &&
+        m_markerPreviewSample < sampleCount)
+    {
+
+        QPen previewPen(Qt::yellow);
+        previewPen.setWidth(1);
+        previewPen.setStyle(Qt::DashLine);
+        p.setPen(previewPen);
+
+        int x = m_leftMargin + m_markerPreviewSample * m_cellWidth;
+        p.drawLine(x, m_topMargin, x, h - 1);
+    }
+    // --- Marcadores amarillos ---
+    const auto &markers = m_doc->markerList();
+    if (!markers.empty())
+    {
+        QPen markerPen(Qt::yellow);
+        markerPen.setWidth(2);
+        p.setPen(markerPen);
+
+        QFont oldFont = p.font();
+        QFont smallFont = oldFont;
+        smallFont.setPointSize(std::max(6, oldFont.pointSize() - 1));
+        p.setFont(smallFont);
+        QFontMetrics fm(smallFont);
+
+        // Y de los números de marcador: entre el eje de tiempo y la primera señal
+        int markerLabelY = m_topMargin - fm.height() - 2;
+
+        int index = 0;
+        for (const Marker &mk : markers)
+        {
+            int sample = mk.sample;
+            int number = mk.id;
+            if (sample < 0 || sample >= sampleCount)
+                continue;
+
+            int x = m_leftMargin + sample * m_cellWidth;
+
+            // Línea amarilla
+            p.drawLine(x, m_topMargin, x, h - 1);
+
+            QString label = QString::number(number);
+            int tw = fm.horizontalAdvance(label);
+            int th = fm.height();
+
+            int labelX = x - tw - 6;
+            if (labelX < 0)
+                labelX = 0;
+            QRect r(labelX, markerLabelY, tw + 6, th);
+
+            p.save();
+            p.setBrush(QColor(255, 255, 0, 220));
+            p.setPen(Qt::black);
+            p.drawRect(r);
+            p.drawText(r, Qt::AlignCenter, label);
+            p.restore();
+
+            ++index;
+        }
+
+        p.setFont(oldFont);
     }
 }
 
@@ -667,7 +734,6 @@ void WaveView::drawVectorSelection(QPainter &p)
     p.drawRect(selRect);
     p.restore();
 }
-
 void WaveView::mousePressEvent(QMouseEvent *event)
 {
     if (!m_doc)
@@ -679,10 +745,11 @@ void WaveView::mousePressEvent(QMouseEvent *event)
     int sigIdx = -1;
     int sampleIdx = -1;
 
+    // SOLO gestionamos aquí el botón izquierdo
     if (event->button() == Qt::LeftButton)
     {
 
-        // 1) Click izquierdo en zona de nombres -> empezar a arrastrar la señal
+        // 1) Click en la zona de nombres -> empezar a mover señal
         if (event->pos().x() < m_leftMargin)
         {
             int idx = mapToSignalIndexFromY(event->pos().y());
@@ -691,11 +758,60 @@ void WaveView::mousePressEvent(QMouseEvent *event)
                 m_isMovingSignal = true;
                 m_moveSignalIndex = idx;
                 setCursor(Qt::ClosedHandCursor);
-                return; // no seguimos con pintura/borra/etc.
+                return; // no seguimos con pintura ni nada más
             }
         }
 
-        // 2) Modo goma
+        // 2) Modos de MARCADORES (añadir / borrar)
+        if (m_mode == Mode::MarkerAdd || m_mode == Mode::MarkerSub)
+        {
+            // Nos basta con conocer el sample, la señal da igual
+            if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+            {
+
+                if (m_mode == Mode::MarkerAdd)
+                {
+                    // Añadir marcador en este sample
+                    m_doc->addMarker(sampleIdx);
+                }
+                else
+                { // Mode::MarkerDelete
+                    const auto &markers = m_doc->markerList();
+                    if (!markers.empty())
+                    {
+                        int bestIndex = -1;
+                        int bestDist = INT_MAX;
+
+                        int clickX = event->pos().x();
+
+                        for (int i = 0; i < static_cast<int>(markers.size()); ++i)
+                        {
+                            int mx = m_leftMargin + markers[i].sample * m_cellWidth;
+
+                            int dist = mx - clickX;
+                            if (dist < 0)
+                                dist = -dist;
+
+                            if (dist < bestDist)
+                            {
+                                bestDist = dist;
+                                bestIndex = i;
+                            }
+                        }
+
+                        // Si clicas razonablemente cerca (hasta una celda de ancho)
+                        if (bestIndex >= 0 && bestDist <= m_cellWidth)
+                        {
+                            int id = markers[bestIndex].id;
+                            m_doc->subMarkerById(id);
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        // 3) Modo goma (eraser)
         if (m_mode == Mode::Erasing)
         {
             if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
@@ -707,24 +823,27 @@ void WaveView::mousePressEvent(QMouseEvent *event)
             return;
         }
 
-        // 3) Modo tijeras
+        // 4) Modo tijeras (cut)
         if (m_mode == Mode::CutSelecting)
         {
             if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
             {
                 if (m_cutStartSample < 0)
                 {
+                    // Primer punto
                     m_cutStartSample = sampleIdx;
                     m_cutCurrentSample = sampleIdx;
                     update();
                 }
                 else
                 {
+                    // Segundo punto
                     m_cutCurrentSample = sampleIdx;
                     update();
 
                     int s0 = std::min(m_cutStartSample, sampleIdx);
                     int s1 = std::max(m_cutStartSample, sampleIdx);
+
                     QString msg = tr("Cut waveform from sample %1 to %2?")
                                       .arg(s0)
                                       .arg(s1);
@@ -734,10 +853,13 @@ void WaveView::mousePressEvent(QMouseEvent *event)
                         msg,
                         QMessageBox::Yes | QMessageBox::No,
                         QMessageBox::No);
+
                     if (reply == QMessageBox::Yes)
                     {
                         m_doc->cutRange(s0, s1);
                     }
+
+                    // Reseteamos pero mantenemos el modo tijeras
                     m_cutStartSample = -1;
                     m_cutCurrentSample = -1;
                     update();
@@ -746,7 +868,7 @@ void WaveView::mousePressEvent(QMouseEvent *event)
             return;
         }
 
-        // 4) Pintar bit / seleccionar vector
+        // 5) Pintar bit o seleccionar vector
         if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
         {
             const auto &sigs = m_doc->signalList();
@@ -756,6 +878,7 @@ void WaveView::mousePressEvent(QMouseEvent *event)
 
                 if (sig.type == SignalType::Bit)
                 {
+                    // Pintura continua: parte superior = 1, inferior = 0
                     int top = m_topMargin + sigIdx * m_rowHeight;
                     int midY = top + m_rowHeight / 2;
                     int y = event->pos().y();
@@ -767,21 +890,23 @@ void WaveView::mousePressEvent(QMouseEvent *event)
                     m_bitLastSample = sampleIdx;
 
                     m_doc->setBitValue(sigIdx, sampleIdx, v);
+                    return;
                 }
                 else
                 {
+                    // Vector: empezamos selección de rango
                     m_mode = Mode::VectorSelecting;
                     m_selSignal = sigIdx;
                     m_selStartSample = sampleIdx;
                     m_selCurrentSample = sampleIdx;
                     update();
+                    return;
                 }
             }
-            return;
         }
     }
 
-    // Botón derecho -> no hacemos nada aquí, lo maneja contextMenuEvent
+    // El botón derecho no se gestiona aquí, lo maneja contextMenuEvent
     QWidget::mousePressEvent(event);
 }
 
@@ -809,8 +934,34 @@ void WaveView::mouseMoveEvent(QMouseEvent *event)
         }
         return;
     }
+    // 2) Modo MarkerAdd: solo previsualizamos,
+    //    no añadimos hasta el click (en mousePressEvent)
+    if (m_mode == Mode::MarkerAdd)
+    {
+        int sigIdx = -1;
+        int sampleIdx = -1;
+        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+        {
+            if (sampleIdx != m_markerPreviewSample)
+            {
+                m_markerPreviewSample = sampleIdx;
+                update();
+            }
+        }
+        else
+        {
+            if (m_markerPreviewSample != -1)
+            {
+                m_markerPreviewSample = -1;
+                update();
+            }
+        }
+        // No return: si quieres que en MarkerAdd solo se vea la línea,
+        // puedes hacer 'return;' aquí. Si no, deja seguir.
+        return;
+    }
 
-    // 2) Tijeras: actualizar segunda línea roja
+    // 3) Tijeras: actualizar segunda línea roja
     if (m_mode == Mode::CutSelecting && m_cutStartSample >= 0)
     {
         int sigIdx = -1;
@@ -826,7 +977,7 @@ void WaveView::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
-    // 3) Goma (borrado continuo)
+    // 4) Goma (borrado continuo)
     if (m_mode == Mode::Erasing && (event->buttons() & Qt::LeftButton))
     {
         int sigIdx = -1;
@@ -853,7 +1004,7 @@ void WaveView::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
-    // 4) Pintura de bit continua
+    // 5) Pintura de bit continua
     if (m_mode == Mode::BitPainting)
     {
         int sigIdx = -1;
@@ -874,7 +1025,7 @@ void WaveView::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
-    // 5) Selección de vector (rectángulo azul)
+    // 6) Selección de vector (rectángulo azul)
     if (m_mode == Mode::VectorSelecting)
     {
         int sigIdx = -1;
@@ -934,29 +1085,22 @@ void WaveView::mouseReleaseEvent(QMouseEvent *event)
             sigIdx == m_selSignal)
         {
 
+            int value;
+            QString label = QInputDialog::getText(
+                this, tr("Vector label"),
+                tr("Name or Value:"),
+                QLineEdit::Normal,
+                QString());
+            if (label.isEmpty())
+            {
+                value = 0;
+            }
+            else
+            {
+                value = label.toInt(0) + 1;
+            }
 
-
-         
-
-        
-    
-        int value;
-        QString label = QInputDialog::getText(
-            this, tr("Vector label"),
-            tr("Name or Value:"),
-            QLineEdit::Normal,
-            QString());
-        if (label.isEmpty())
-        {
-             value = 0;
-        }else
-        {
-             value = label.toInt(0)+1;
-        }
- 
-        m_doc->setVectorRange(m_selSignal, m_selStartSample, sampleIdx, value, label);
-                
-            
+            m_doc->setVectorRange(m_selSignal, m_selStartSample, sampleIdx, value, label);
         }
 
         m_mode = Mode::None;
@@ -1025,7 +1169,6 @@ void WaveView::contextMenuEvent(QContextMenuEvent *event)
                 pasteAct = menu.addAction(tr("Paste signal (duplicate)"));
             }
 
-
             menu.addSeparator();
             QAction *deleteAct = menu.addAction(tr("Delete signal"));
 
@@ -1066,13 +1209,14 @@ void WaveView::contextMenuEvent(QContextMenuEvent *event)
                 m_doc->copySignal(sigIdx);
             }
 
-            // Paste Signal 
+            // Paste Signal
             else if (pasteAct && chosen == pasteAct)
             {
                 m_doc->pasteSignal(sigIdx + 1);
             }
             // Remove Signal
-            else if (chosen == deleteAct) {
+            else if (chosen == deleteAct)
+            {
 
                 m_doc->removeSignal(sigIdx);
             }
@@ -1160,4 +1304,30 @@ void WaveView::addClockSignal()
         return;
 
     m_doc->addClockSignal(name, pulses, highSamples, lowSamples);
+}
+void WaveView::setMarkerAddModeEnabled(bool en)
+{
+    if (en)
+    {
+        m_mode = Mode::MarkerAdd;
+    }
+    else if (m_mode == Mode::MarkerAdd)
+    {
+        m_mode = Mode::None;
+    }
+    update();
+}
+
+void WaveView::setMarkerSubModeEnabled(bool en)
+{
+    if (en)
+    {
+        m_mode = Mode::MarkerSub;
+    }
+    else if (m_mode == Mode::MarkerSub)
+    {
+        m_mode = Mode::None;
+    }
+    m_markerPreviewSample = -1;
+    update();
 }

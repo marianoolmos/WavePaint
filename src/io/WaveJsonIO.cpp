@@ -12,35 +12,11 @@
 //                                                                                       
 //
 // Project:       WavePaint
-// Description:
-//
-// Author:       Mariano Olmos Martin
-// Mail  :       mariano.olmos@outlook.com
-// Date:         27/11/2025
-// Version:      v0.0
-// License: MIT License
-//
-// Copyright (c) 2025 Mariano Olmos
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this VHDL code and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject
-// to the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// File:          WaveJsonIO.cpp
+// Description:   Save / load WaveDocument to JSON (.wp / .json),
+//                incluyendo señales y marcadores.
 //======================================================================
+
 #include "io/WaveJsonIO.h"
 #include "SignalModel.h"
 
@@ -58,13 +34,16 @@ bool WaveJsonIO::saveToFile(const WaveDocument &doc, const QString &fileName)
         return false;
 
     QJsonObject root;
+
+    // --- Información básica ---
     root["sampleCount"] = doc.m_sampleCount;
 
+    // --- Señales ---
     QJsonArray sigArray;
     for (const auto &s : doc.m_signals) {
         QJsonObject so;
-        so["name"] = s.name;
-        so["type"] = (s.type == SignalType::Bit ? "bit" : "vector");
+        so["name"]  = s.name;
+        so["type"]  = (s.type == SignalType::Bit ? "bit" : "vector");
         so["color"] = s.color.name(QColor::HexArgb);
 
         QJsonArray vals;
@@ -80,6 +59,17 @@ bool WaveJsonIO::saveToFile(const WaveDocument &doc, const QString &fileName)
         sigArray.append(so);
     }
     root["signals"] = sigArray;
+
+    // --- Marcadores ---
+    // Cada marcador tiene un id fijo y una posición de sample.
+    QJsonArray markerArray;
+    for (const Marker &m : doc.m_markers) {
+        QJsonObject mo;
+        mo["id"]     = m.id;
+        mo["sample"] = m.sample;
+        markerArray.append(mo);
+    }
+    root["markers"] = markerArray;
 
     QJsonDocument docJson(root);
     f.write(docJson.toJson(QJsonDocument::Indented));
@@ -104,19 +94,25 @@ bool WaveJsonIO::loadFromFile(WaveDocument &doc, const QString &fileName)
     if (samples <= 0)
         return false;
 
+    // --- Reset básico del documento ---
     doc.m_sampleCount = samples;
     doc.m_signals.clear();
     doc.m_vcdSignals.clear();
+    doc.m_markers.clear();
+    doc.m_nextMarkerId = 1;
 
+    // --- Cargar señales ---
     QJsonArray sigArray = root.value("signals").toArray();
     for (const QJsonValue &v : sigArray) {
-        if (!v.isObject()) continue;
+        if (!v.isObject())
+            continue;
+
         QJsonObject so = v.toObject();
 
         Signal s;
         s.name = so.value("name").toString();
         QString typeStr = so.value("type").toString("bit");
-        s.type = (typeStr == "vector") ? SignalType::Vector : SignalType::Bit;
+        s.type  = (typeStr == "vector") ? SignalType::Vector : SignalType::Bit;
         s.color = QColor(so.value("color").toString("#009600"));
 
         QJsonArray vals = so.value("values").toArray();
@@ -132,6 +128,31 @@ bool WaveJsonIO::loadFromFile(WaveDocument &doc, const QString &fileName)
         }
 
         doc.m_signals.push_back(std::move(s));
+    }
+
+    // --- Cargar marcadores (si existen en el fichero) ---
+    QJsonArray markerArray = root.value("markers").toArray();
+    for (const QJsonValue &v : markerArray) {
+        if (!v.isObject())
+            continue;
+
+        QJsonObject mo = v.toObject();
+
+        int id     = mo.value("id").toInt(0);
+        int sample = mo.value("sample").toInt(-1);
+
+        if (id <= 0)
+            continue;
+        if (sample < 0 || sample >= doc.m_sampleCount)
+            continue;
+
+        Marker m;
+        m.id     = id;
+        m.sample = sample;
+        doc.m_markers.push_back(m);
+
+        if (id >= doc.m_nextMarkerId)
+            doc.m_nextMarkerId = id + 1;
     }
 
     emit doc.dataChanged();

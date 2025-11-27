@@ -67,6 +67,9 @@ public slots:
     void setCutModeEnabled(bool en);  // enable/disable from the UI
     void setEraseModeEnabled(bool en);
 
+    void setMarkerAddModeEnabled(bool en);     
+    void setMarkerSubModeEnabled(bool en);
+
     // Horizontal zoom (changes the cell width)
     void zoomIn();
     void zoomOut();
@@ -95,7 +98,9 @@ private:
         VectorSelecting,
         BitPainting,
         CutSelecting,
-        Erasing
+        Erasing,
+        MarkerAdd,
+        MarkerSub
     };
 
     Mode m_mode;
@@ -116,7 +121,9 @@ private:
 
     //Moving Signals
     bool m_isMovingSignal;
-    int m_moveSignalIndex;  
+    int m_moveSignalIndex;
+    
+    int  m_markerPreviewSample;
 
     // Optional size for export (exact content width/height)
     QSize m_exportSize;
@@ -130,6 +137,7 @@ private:
     void drawBitSignal(QPainter &p, const Signal &sig, int index);
     void drawVectorSignal(QPainter &p, const Signal &sig, int index);
     void drawVectorSelection(QPainter &p);
+
 
     void addBitSignal();
     void addVectorSignal();
