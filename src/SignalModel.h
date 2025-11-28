@@ -158,6 +158,10 @@ public:
     void clear();
     void clearSignals();
 
+    void undo();
+    void redo();
+    bool canUndo() const;
+    bool canRedo() const;
     
 
     // Add a visible signal from the VCD library
@@ -181,6 +185,7 @@ public slots:
 
 signals:
     void dataChanged();
+    void undoRedoStateChanged(); 
 
 private:
     int m_sampleCount;
@@ -207,6 +212,24 @@ private:
     std::vector<QColor>                 m_blockClipboardColors;
 
     void resizeSignals(int newSampleCount);
+
+    // Undo/Redo system
+    struct Snapshot {
+        int sampleCount;
+        std::vector<Signal> m_signals;
+        std::vector<Signal> m_vcdSignals;
+        std::vector<Marker> m_markers;
+        int m_nextMarkerId;
+        std::vector<Arrow> m_arrows;
+        int m_nextArrowId;
+    };
+
+    std::vector<Snapshot> m_undoStack;
+    std::vector<Snapshot> m_redoStack;
+    int m_maxUndoSteps = 50;  
+
+    void pushUndoSnapshot();  
+    void clearHistory();     
 
 
 };

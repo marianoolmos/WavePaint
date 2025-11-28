@@ -86,6 +86,8 @@ private:
     QAction *m_addMarkerAction;
     QAction *m_subMarkerAction;
     QAction *m_eraseAction;
+    QAction *m_undoAction = nullptr;
+    QAction *m_redoAction = nullptr;
 
     void createUi();
     void createMenus();
@@ -112,6 +114,10 @@ private slots:
     void onSubArrowToggled(bool enabled);
     void onSelectBlockToggled(bool enabled);
     void cancelModes();
+
+    void onUndo();
+    void onRedo();
+    void updateUndoRedoActions();
 };
 
 #endif // MAINWINDOW_H

@@ -81,7 +81,12 @@ MainWindow::MainWindow(QWidget *parent)
     createMenus();
     createToolBar();
 
+    // Mantener botones de undo/redo actualizados
     statusBar()->showMessage(tr("Ready"));
+        connect(&m_document, &WaveDocument::undoRedoStateChanged,
+            this,          &MainWindow::updateUndoRedoActions);
+
+    updateUndoRedoActions(); // estado inicial
 }
 
 void MainWindow::createUi()
@@ -176,10 +181,14 @@ void MainWindow::createToolBar()
     tb->setMovable(false);
 
     // Undo / redo (Actions)
-    QAction *undoAct = tb->addAction(QStringLiteral("↶"));
-    undoAct->setToolTip(tr("Undo"));
-    QAction *redoAct = tb->addAction(QStringLiteral("↷"));
-    redoAct->setToolTip(tr("Redo"));
+    m_undoAction = tb->addAction(QString::fromUtf8("↶"));
+    m_undoAction->setToolTip(tr("Undo last action"));
+    m_undoAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Z));
+
+
+    m_redoAction = tb->addAction(QString::fromUtf8("↷"));
+    m_redoAction->setToolTip(tr("Redo last undone action"));
+    m_redoAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Y));
 
     tb->addSeparator();
 
@@ -246,6 +255,9 @@ void MainWindow::createToolBar()
     tb->addWidget(m_sampleSpin);
 
     // Connections
+    connect(m_undoAction, &QAction::triggered, this, &MainWindow::onUndo);
+    connect(m_redoAction, &QAction::triggered, this, &MainWindow::onRedo);
+
     connect(zoomOutAct, &QAction::triggered, m_waveView, &WaveView::zoomOut);
     connect(zoomInAct, &QAction::triggered, m_waveView, &WaveView::zoomIn);
 
@@ -264,7 +276,7 @@ void MainWindow::createToolBar()
             this,                 &MainWindow::onArrowToggled);
     connect(m_subArrowAction,  &QAction::toggled,
             this,                 &MainWindow::onSubArrowToggled);
-       connect(m_selAction, &QAction::toggled,
+    connect(m_selAction, &QAction::toggled,
             this,                &MainWindow::onSelectBlockToggled);
 }
 
@@ -913,4 +925,22 @@ void MainWindow::onSelectBlockToggled(bool enabled)
     } else {
         m_waveView->setSelectionModeEnabled(false);
     }
+}
+void MainWindow::onUndo()
+{
+    m_document.undo();
+}
+
+void MainWindow::onRedo()
+{
+    m_document.redo();
+}
+
+void MainWindow::updateUndoRedoActions()
+{
+    if (!m_undoAction || !m_redoAction)
+        return;
+
+    m_undoAction->setEnabled(m_document.canUndo());
+    m_redoAction->setEnabled(m_document.canRedo());
 }

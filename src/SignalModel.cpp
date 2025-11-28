@@ -86,6 +86,7 @@ void WaveDocument::setSampleCount(int count)
 
 int WaveDocument::addBitSignal(const QString &name)
 {
+    pushUndoSnapshot();
     Signal s(name, SignalType::Bit, m_sampleCount);
     s.color = QColor(0, 160, 0);
     std::fill(s.values.begin(), s.values.end(), 0); // default 0
@@ -97,7 +98,8 @@ int WaveDocument::addBitSignal(const QString &name)
 
 int WaveDocument::addVectorSignal(const QString &name)
 {
-    
+
+    pushUndoSnapshot();
     Signal s(name, SignalType::Vector, m_sampleCount);
     s.color = QColor(0, 160, 0);
     std::fill(s.values.begin(), s.values.end(), UNDEFINED_VALUE);
@@ -109,6 +111,7 @@ int WaveDocument::addVectorSignal(const QString &name)
 
 int WaveDocument::addClockSignal(const QString &name, int pulses, int highSamples, int lowSamples)
 {
+    pushUndoSnapshot();
     if (pulses <= 0 || highSamples < 0 || lowSamples < 0)
     {
         return -1;
@@ -173,6 +176,8 @@ void WaveDocument::setBitValue(int signalIndex, int sampleIndex, int value)
     if (sampleIndex < 0 || sampleIndex >= m_sampleCount)
         return;
 
+    pushUndoSnapshot();
+
     Signal &s = m_signals[signalIndex];
     if (s.type != SignalType::Bit)
         return;
@@ -193,6 +198,8 @@ void WaveDocument::setVectorRange(int signalIndex, int startSample, int endSampl
     if (startSample < 0 && endSample < 0)
         return;
 
+    pushUndoSnapshot();
+
     Signal &s = m_signals[signalIndex];
     if (s.type != SignalType::Vector)
         return;
@@ -212,10 +219,13 @@ void WaveDocument::setVectorRange(int signalIndex, int startSample, int endSampl
 
 void WaveDocument::clearSample(int signalIndex, int sampleIndex)
 {
+    
     if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size()))
         return;
     if (sampleIndex < 0 || sampleIndex >= m_sampleCount)
         return;
+
+    pushUndoSnapshot();
 
     Signal &s = m_signals[signalIndex];
     s.values[sampleIndex] = UNDEFINED_VALUE;
@@ -228,6 +238,7 @@ void WaveDocument::setSignalColor(int signalIndex, const QColor &c)
 {
     if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size()))
         return;
+    pushUndoSnapshot();
     m_signals[signalIndex].color = c;
     emit dataChanged();
 }
@@ -236,26 +247,36 @@ void WaveDocument::renameSignal(int signalIndex, const QString &name)
 {
     if (signalIndex < 0 || signalIndex >= static_cast<int>(m_signals.size()))
         return;
+    pushUndoSnapshot();
     m_signals[signalIndex].name = name;
     emit dataChanged();
 }
 
 void WaveDocument::clear()
 {
+    m_sampleCount = 0;
     m_signals.clear();
     m_vcdSignals.clear();
-    m_sampleCount = 20;
+    m_markers.clear();
+    m_arrows.clear();
+    m_nextMarkerId = 1;
+    m_nextArrowId  = 1;
+
+    clearHistory();     
+
     emit dataChanged();
 }
 
 void WaveDocument::clearSignals()
 {
+    pushUndoSnapshot();
     m_signals.clear();
     emit dataChanged();
 }
 
 void WaveDocument::cutRange(int startSample, int endSample)
 {
+    pushUndoSnapshot();
     if (m_sampleCount <= 0)
         return;
 
@@ -422,6 +443,7 @@ void WaveDocument::copySignal(int signalIndex)
 
 int WaveDocument::pasteSignal(int destIndex)
 {
+    pushUndoSnapshot();
     if (!m_hasClipboardSignal)
         return -1;
 
@@ -476,6 +498,7 @@ void WaveDocument::removeSignal(int signalIndex)
 
 int WaveDocument::addMarker(int sampleIndex)
 {
+    pushUndoSnapshot();
     if (sampleIndex < 0 || sampleIndex >= m_sampleCount)
         return -1;
 
@@ -503,6 +526,7 @@ int WaveDocument::addMarker(int sampleIndex)
 
 void WaveDocument::subMarkerById(int markerId)
 {
+    pushUndoSnapshot();
     auto it = std::find_if(m_markers.begin(), m_markers.end(),
                            [markerId](const Marker &m) { return m.id == markerId; });
     if (it == m_markers.end())
@@ -530,6 +554,7 @@ void WaveDocument::subMarkerById(int markerId)
 
 void WaveDocument::clearMarkers()
 {
+    pushUndoSnapshot();
     m_markers.clear();
     m_nextMarkerId = 1;
     emit dataChanged();
@@ -551,6 +576,7 @@ void WaveDocument::addMarkerFromLoad(int id, int sampleIndex)
 int WaveDocument::addArrow(int startSignal, int startSample,
                            int endSignal,   int endSample)
 {
+    pushUndoSnapshot();
     int sigCount = static_cast<int>(m_signals.size());
     if (startSignal < 0 || startSignal >= sigCount) return -1;
     if (endSignal   < 0 || endSignal   >= sigCount) return -1;
@@ -571,6 +597,7 @@ int WaveDocument::addArrow(int startSignal, int startSample,
 
 void WaveDocument::subArrowById(int arrowId)
 {
+    pushUndoSnapshot();
     auto it = std::find_if(m_arrows.begin(), m_arrows.end(),
                            [arrowId](const Arrow &a){ return a.id == arrowId; });
     if (it == m_arrows.end())
@@ -594,6 +621,7 @@ void WaveDocument::subArrowById(int arrowId)
 
 void WaveDocument::clearArrows()
 {
+    pushUndoSnapshot();
     m_arrows.clear();
     m_nextArrowId = 1;
     emit dataChanged();
@@ -601,6 +629,7 @@ void WaveDocument::clearArrows()
 void WaveDocument::copyBlock(int topSignal, int bottomSignal,
                              int startSample, int endSample)
 {
+  
     int sigCount    = static_cast<int>(m_signals.size());
     int sampleCount = m_sampleCount;
     if (sigCount == 0 || sampleCount == 0)
@@ -658,6 +687,7 @@ void WaveDocument::copyBlock(int topSignal, int bottomSignal,
 
 void WaveDocument::pasteBlock(int destTopSignal, int destStartSample)
 {
+    pushUndoSnapshot();
     if (!m_hasBlockClipboard)
         return;
 
@@ -701,6 +731,7 @@ void WaveDocument::pasteBlock(int destTopSignal, int destStartSample)
 void WaveDocument::clearBlock(int topSignal, int bottomSignal,
                               int startSample, int endSample)
 {
+    pushUndoSnapshot();
     int sigCount    = static_cast<int>(m_signals.size());
     int sampleCount = m_sampleCount;
     if (sigCount == 0 || sampleCount == 0)
@@ -721,6 +752,7 @@ void WaveDocument::clearBlock(int topSignal, int bottomSignal,
     for (int sIdx = topSignal; sIdx <= bottomSignal; ++sIdx) {
         Signal &s = m_signals[sIdx];
 
+        pushUndoSnapshot();
         if (static_cast<int>(s.values.size()) < sampleCount)
             s.values.resize(sampleCount, UNDEFINED_VALUE);
         if (static_cast<int>(s.labels.size()) < sampleCount)
@@ -733,4 +765,106 @@ void WaveDocument::clearBlock(int topSignal, int bottomSignal,
     }
 
     emit dataChanged();
+}
+void WaveDocument::pushUndoSnapshot()
+{
+    Snapshot snap;
+    snap.sampleCount   = m_sampleCount;
+    snap.m_signals     = m_signals;
+    snap.m_vcdSignals  = m_vcdSignals;
+    snap.m_markers     = m_markers;
+    snap.m_nextMarkerId= m_nextMarkerId;
+    snap.m_arrows      = m_arrows;
+    snap.m_nextArrowId = m_nextArrowId;
+
+    m_undoStack.push_back(std::move(snap));
+    if ((int)m_undoStack.size() > m_maxUndoSteps) {
+        m_undoStack.erase(m_undoStack.begin());
+    }
+
+    // Cada vez que hay un punto de undo nuevo, el redo se limpia
+    m_redoStack.clear();
+
+    emit undoRedoStateChanged();
+}
+
+void WaveDocument::clearHistory()
+{
+    m_undoStack.clear();
+    m_redoStack.clear();
+    emit undoRedoStateChanged();
+}
+
+bool WaveDocument::canUndo() const
+{
+    return !m_undoStack.empty();
+}
+
+bool WaveDocument::canRedo() const
+{
+    return !m_redoStack.empty();
+}
+
+void WaveDocument::undo()
+{
+    if (m_undoStack.empty())
+        return;
+
+    // Guardar estado actual en REDO
+    Snapshot cur;
+    cur.sampleCount   = m_sampleCount;
+    cur.m_signals     = m_signals;
+    cur.m_vcdSignals  = m_vcdSignals;
+    cur.m_markers     = m_markers;
+    cur.m_nextMarkerId= m_nextMarkerId;
+    cur.m_arrows      = m_arrows;
+    cur.m_nextArrowId = m_nextArrowId;
+    m_redoStack.push_back(std::move(cur));
+
+    // Recuperar último snapshot en UNDO
+    Snapshot snap = std::move(m_undoStack.back());
+    m_undoStack.pop_back();
+
+    m_sampleCount   = snap.sampleCount;
+    m_signals       = std::move(snap.m_signals);
+    m_vcdSignals    = std::move(snap.m_vcdSignals);
+    m_markers       = std::move(snap.m_markers);
+    m_nextMarkerId  = snap.m_nextMarkerId;
+    m_arrows        = std::move(snap.m_arrows);
+    m_nextArrowId   = snap.m_nextArrowId;
+
+    emit dataChanged();
+    emit undoRedoStateChanged();
+}
+
+void WaveDocument::redo()
+{
+    if (m_redoStack.empty())
+        return;
+
+    // Guardar estado actual en UNDO
+    Snapshot cur;
+    cur.sampleCount   = m_sampleCount;
+    cur.m_signals     = m_signals;
+    cur.m_vcdSignals  = m_vcdSignals;
+    cur.m_markers     = m_markers;
+    cur.m_nextMarkerId= m_nextMarkerId;
+    cur.m_arrows      = m_arrows;
+    cur.m_nextArrowId = m_nextArrowId;
+    m_undoStack.push_back(std::move(cur));
+
+    // Recuperar snapshot de REDO
+    Snapshot snap = std::move(m_redoStack.back());
+    m_redoStack.pop_back();
+
+    m_sampleCount   = snap.sampleCount;
+    m_signals       = std::move(snap.m_signals);
+    m_vcdSignals    = std::move(snap.m_vcdSignals);
+    m_markers       = std::move(snap.m_markers);
+    m_nextMarkerId  = snap.m_nextMarkerId;
+    m_arrows        = std::move(snap.m_arrows);
+    m_nextArrowId   = snap.m_nextArrowId;
+
+    emit dataChanged();
+    emit undoRedoStateChanged();
 }
