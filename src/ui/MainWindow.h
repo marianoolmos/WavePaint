@@ -44,10 +44,10 @@
 
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
-
+ 
 #include <QMainWindow>
 #include <QAction>
-#include "SignalModel.h"
+#include "core/core.h"
 
 class WaveView;
 class QTreeWidget;
@@ -59,7 +59,7 @@ class QScrollArea;
 class QListWidgetItem;
 
 class MainWindow : public QMainWindow
-{
+{ 
     Q_OBJECT
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -89,7 +89,7 @@ private:
     QAction *m_undoAction = nullptr;
     QAction *m_redoAction = nullptr;
 
-    void createUi();
+    void createUi(); 
     void createMenus();
     void createToolBar();
     void rebuildHierarchy();

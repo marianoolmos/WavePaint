@@ -44,10 +44,10 @@
 #ifndef WAVEVIEW_H
 #define WAVEVIEW_H
 
-#include <QWidget>
+#include <QWidget> 
 #include <QColor>
 #include <QSize>
-#include "SignalModel.h"
+#include "core/core.h"
 
 class WaveView : public QWidget
 {

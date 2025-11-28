@@ -41,8 +41,8 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //======================================================================
-#include "io/WaveVcdImporter.h"
-#include "SignalModel.h"
+#include "io/VcdImporter.h"
+#include "core.h"
 
 #include <QFile>
 #include <QTextStream>
@@ -51,7 +51,6 @@
 #include <QStringList>
 #include <algorithm>
 
-static constexpr int UNDEFINED_VALUE = -1;
 
 bool WaveVcdImporter::loadFromVcd(WaveDocument &doc, const QString &fileName)
 {

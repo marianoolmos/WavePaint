@@ -12,22 +12,22 @@
 //                                                                                       
 //
 // Project:       WavePaint
-// File:          WaveJsonIO.cpp
+// File:          JsonIO.cpp
 // Description:   Save / load WaveDocument to JSON (.wp / .json),
 //                incluyendo señales, marcadores y flechas.
 //======================================================================
 
-#include "io/WaveJsonIO.h"
-#include "SignalModel.h"
+#include "io/JsonIO.h"
+#include "core.h"
 
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
 
-static constexpr int UNDEFINED_VALUE = -1;
 
-bool WaveJsonIO::saveToFile(const WaveDocument &doc, const QString &fileName)
+
+bool JsonIO::saveToFile(const WaveDocument &doc, const QString &fileName)
 {
     QFile f(fileName);
     if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate))
@@ -90,7 +90,7 @@ bool WaveJsonIO::saveToFile(const WaveDocument &doc, const QString &fileName)
     return true;
 }
 
-bool WaveJsonIO::loadFromFile(WaveDocument &doc, const QString &fileName)
+bool JsonIO::loadFromFile(WaveDocument &doc, const QString &fileName)
 {
     QFile f(fileName);
     if (!f.open(QIODevice::ReadOnly))

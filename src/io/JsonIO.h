@@ -42,19 +42,19 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //======================================================================
 
-#ifndef WAVEJSONIO_H
-#define WAVEJSONIO_H
+#ifndef JsonIO_H
+#define JsonIO_H
 
 #include <QString>
 
 class WaveDocument;
 
 // Document persistence in JSON format (e.g., .wp files).
-class WaveJsonIO
+class JsonIO
 {
 public:
     static bool saveToFile(const WaveDocument &doc, const QString &fileName);
     static bool loadFromFile(WaveDocument &doc, const QString &fileName);
 };
 
-#endif // WAVEJSONIO_H
+#endif // JsonIO_H

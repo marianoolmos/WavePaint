@@ -42,22 +42,22 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //======================================================================
 
-#ifndef SIGNALMODEL_H
-#define SIGNALMODEL_H
+#ifndef CORE_H
+#define CORE_H
 
 #include <QObject>
-#include <QString>
+#include <QString> 
 #include <QColor>
 #include <vector>
 
-class WaveJsonIO;
-class WaveVcdImporter;
+class JsonIO;
+class VcdImporter;
 
 enum class SignalType {
     Bit,
     Vector
 };
-
+static constexpr int UNDEFINED_VALUE = -1;
 struct Signal
 {
     QString name;
@@ -97,7 +97,7 @@ struct Arrow {
 class WaveDocument : public QObject
 {
     Q_OBJECT
-    friend class WaveJsonIO;
+    friend class JsonIO;
     friend class WaveVcdImporter;
 public:
     explicit WaveDocument(QObject *parent = nullptr);
@@ -234,4 +234,4 @@ private:
 
 };
 
-#endif // SIGNALMODEL_H
+#endif // CORE_H
