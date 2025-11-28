@@ -16,7 +16,7 @@
 //
 // Author:       Mariano Olmos Martin
 // Mail  :       mariano.olmos@outlook.com
-// Date:         27/11/2025
+// Date:         2025
 // Version:      v0.0
 // License: MIT License
 //
@@ -68,6 +68,7 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
 
 private:
+
     WaveDocument m_document;
     WaveView *m_waveView;
     QSpinBox *m_sampleSpin;
@@ -88,11 +89,14 @@ private:
     QAction *m_eraseAction;
     QAction *m_undoAction = nullptr;
     QAction *m_redoAction = nullptr;
+    QList<QAction*> m_allActions;
+
 
     void createUi(); 
     void createMenus();
     void createToolBar();
     void rebuildHierarchy();
+
     int signalCount() const;
     void moveSignal(int from, int to);
 
@@ -114,10 +118,11 @@ private slots:
     void onSubArrowToggled(bool enabled);
     void onSelectBlockToggled(bool enabled);
     void cancelModes();
-
+    void activateXDesactivateAll(const QList<QAction*> &actions, QAction *except);
     void onUndo();
     void onRedo();
     void updateUndoRedoActions();
 };
 
 #endif // MAINWINDOW_H
+

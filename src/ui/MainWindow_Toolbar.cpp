@@ -16,7 +16,7 @@
 //
 // Author:       Mariano Olmos Martin
 // Mail  :       mariano.olmos@outlook.com
-// Date:         27/11/2025
+// Date:         2025
 // Version:      v0.0
 // License: MIT License
 //
@@ -66,6 +66,8 @@
 
 void MainWindow::createToolBar()
 {
+
+
     QToolBar *tb = addToolBar(tr("Timeline"));
     tb->setMovable(false);
 

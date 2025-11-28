@@ -16,7 +16,7 @@
 //
 // Author:       Mariano Olmos Martin
 // Mail  :       mariano.olmos@outlook.com
-// Date:         27/11/2025
+// Date:         2025
 // Version:      v0.0
 // License: MIT License
 //
@@ -65,6 +65,102 @@
 #include <QTreeWidget>
 #include <QSplitter>
 
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent),
+      m_document(this),
+      m_waveView(nullptr),
+      m_sampleSpin(nullptr),
+      m_splitter(nullptr),
+      m_hierarchyTree(nullptr),
+      m_signalList(nullptr),
+      m_waveScroll(nullptr),
+      m_cutAction(nullptr),
+      m_eraseAction(nullptr),
+      m_viewHierarchyAction(nullptr)
+{
+    createUi();
+    createMenus();
+    createToolBar();
+    m_allActions = {
+        m_cutAction,
+        m_eraseAction,
+        m_addMarkerAction,
+        m_subMarkerAction,
+        m_arrowAction,
+        m_subArrowAction,
+        m_selAction
+    };
+    // Mantener botones de undo/redo actualizados
+    statusBar()->showMessage(tr("Ready"));
+    connect(&m_document, &WaveDocument::undoRedoStateChanged,
+            this, &MainWindow::updateUndoRedoActions);
+
+    updateUndoRedoActions(); // estado inicial
+}
+
+void MainWindow::createUi()
+{
+    // Main splitter: left hierarchy, right waveform
+    m_splitter = new QSplitter(this);
+    m_splitter->setOrientation(Qt::Horizontal);
+
+    // Left panel for VCD hierarchy and signal list
+    QWidget *leftPanel = new QWidget(m_splitter);
+    QVBoxLayout *leftLayout = new QVBoxLayout(leftPanel);
+    leftLayout->setContentsMargins(2, 2, 2, 2);
+    leftLayout->setSpacing(2);
+
+    m_hierarchyTree = new QTreeWidget(leftPanel);
+    m_hierarchyTree->setHeaderLabel(tr("Hierarchy"));
+    leftLayout->addWidget(m_hierarchyTree, 2);
+
+    m_signalList = new QListWidget(leftPanel);
+    leftLayout->addWidget(m_signalList, 1);
+
+    leftPanel->setLayout(leftLayout);
+    m_splitter->addWidget(leftPanel);
+
+    // Waveform on the right inside a QScrollArea to allow scrolling and zooming
+    m_waveScroll = new QScrollArea(m_splitter);
+    m_waveScroll->setWidgetResizable(true);
+    m_waveScroll->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+
+    m_waveView = new WaveView(&m_document, m_waveScroll);
+    m_waveScroll->setWidget(m_waveView);
+
+    m_splitter->addWidget(m_waveScroll);
+
+    setCentralWidget(m_splitter);
+    setWindowTitle(tr("WavePaint"));
+    resize(1200, 700);
+
+    // By default,dont show hierarchy on the left.
+    QList<int> sizes;
+    sizes << 0 << width(); // izquierda = 0, derecha = todo
+    m_splitter->setSizes(sizes);
+
+    // Connect hierarchy selection to the signal list
+    connect(m_hierarchyTree, &QTreeWidget::currentItemChanged,
+            this, &MainWindow::onHierarchySelectionChanged);
+
+    // Double-click a signal in the list => add it to the waveform
+    connect(m_signalList, &QListWidget::itemDoubleClicked,
+            this, &MainWindow::onSignalDoubleClicked);
+}
+
+void MainWindow::activateXDesactivateAll(const QList<QAction*> &actions, QAction *except)
+{
+    for (QAction *act : actions)
+    {
+        if (!act || act == except)
+            continue;
+
+        act->blockSignals(true);
+        act->setChecked(false);
+        act->blockSignals(false);
+    }
+}
+
 void MainWindow::onAddMarkerToggled(bool enabled)
 {
     if (!m_waveView)
@@ -72,30 +168,14 @@ void MainWindow::onAddMarkerToggled(bool enabled)
 
     if (enabled)
     {
-        // Desactivar otros modos exclusivos
-        if (m_cutAction)
-        {
-            m_cutAction->blockSignals(true);
-            m_cutAction->setChecked(false);
-            m_cutAction->blockSignals(false);
-        }
-        if (m_eraseAction)
-        {
-            m_eraseAction->blockSignals(true);
-            m_eraseAction->setChecked(false);
-            m_eraseAction->blockSignals(false);
-        }
-        if (m_subMarkerAction)
-        {
-            m_subMarkerAction->blockSignals(true);
-            m_subMarkerAction->setChecked(false);
-            m_subMarkerAction->blockSignals(false);
-        }
-
-        m_waveView->setCutModeEnabled(false);
-        m_waveView->setEraseModeEnabled(false);
-        m_waveView->setMarkerSubModeEnabled(false);
-        m_waveView->setMarkerAddModeEnabled(true);
+    activateXDesactivateAll(m_allActions, m_addMarkerAction);
+    m_waveView->setCutModeEnabled(false);
+    m_waveView->setEraseModeEnabled(false);
+    m_waveView->setMarkerSubModeEnabled(false);
+    m_waveView->setMarkerAddModeEnabled(true);
+    m_waveView->setArrowModeEnabled(false);
+    m_waveView->setArrowSubModeEnabled(false);
+    m_waveView->setSelectionModeEnabled(false);
     }
     else
     {
@@ -110,29 +190,14 @@ void MainWindow::onSubMarkerToggled(bool enabled)
 
     if (enabled)
     {
-        if (m_cutAction)
-        {
-            m_cutAction->blockSignals(true);
-            m_cutAction->setChecked(false);
-            m_cutAction->blockSignals(false);
-        }
-        if (m_eraseAction)
-        {
-            m_eraseAction->blockSignals(true);
-            m_eraseAction->setChecked(false);
-            m_eraseAction->blockSignals(false);
-        }
-        if (m_addMarkerAction)
-        {
-            m_addMarkerAction->blockSignals(true);
-            m_addMarkerAction->setChecked(false);
-            m_addMarkerAction->blockSignals(false);
-        }
-
+        activateXDesactivateAll(m_allActions, m_subMarkerAction);
         m_waveView->setCutModeEnabled(false);
         m_waveView->setEraseModeEnabled(false);
-        m_waveView->setMarkerAddModeEnabled(false);
         m_waveView->setMarkerSubModeEnabled(true);
+        m_waveView->setMarkerAddModeEnabled(false);
+        m_waveView->setArrowModeEnabled(false);
+        m_waveView->setArrowSubModeEnabled(false);
+        m_waveView->setSelectionModeEnabled(false);
     }
     else
     {
@@ -146,37 +211,14 @@ void MainWindow::onArrowToggled(bool enabled)
 
     if (enabled)
     {
-        // desactivar otros modos exclusivos
-        if (m_cutAction)
-        {
-            m_cutAction->blockSignals(true);
-            m_cutAction->setChecked(false);
-            m_cutAction->blockSignals(false);
-        }
-        if (m_eraseAction)
-        {
-            m_eraseAction->blockSignals(true);
-            m_eraseAction->setChecked(false);
-            m_eraseAction->blockSignals(false);
-        }
-        if (m_addMarkerAction)
-        {
-            m_addMarkerAction->blockSignals(true);
-            m_addMarkerAction->setChecked(false);
-            m_addMarkerAction->blockSignals(false);
-        }
-        if (m_subMarkerAction)
-        {
-            m_subMarkerAction->blockSignals(true);
-            m_subMarkerAction->setChecked(false);
-            m_subMarkerAction->blockSignals(false);
-        }
-
+        activateXDesactivateAll(m_allActions, m_arrowAction);
         m_waveView->setCutModeEnabled(false);
         m_waveView->setEraseModeEnabled(false);
-        m_waveView->setMarkerAddModeEnabled(false);
         m_waveView->setMarkerSubModeEnabled(false);
+        m_waveView->setMarkerAddModeEnabled(false);
         m_waveView->setArrowModeEnabled(true);
+        m_waveView->setArrowSubModeEnabled(false);
+        m_waveView->setSelectionModeEnabled(false);
     }
     else
     {
@@ -190,28 +232,14 @@ void MainWindow::onSubArrowToggled(bool enabled)
 
     if (enabled)
     {
-        // Desactivamos otros modos exclusivos
-        auto uncheck = [](QAction *act)
-        {
-            if (!act)
-                return;
-            act->blockSignals(true);
-            act->setChecked(false);
-            act->blockSignals(false);
-        };
-
-        uncheck(m_cutAction);
-        uncheck(m_eraseAction);
-        uncheck(m_addMarkerAction);
-        uncheck(m_subMarkerAction);
-        uncheck(m_arrowAction);
-
+        activateXDesactivateAll(m_allActions, m_subArrowAction);
         m_waveView->setCutModeEnabled(false);
         m_waveView->setEraseModeEnabled(false);
+        m_waveView->setMarkerSubModeEnabled(true);
         m_waveView->setMarkerAddModeEnabled(false);
-        m_waveView->setMarkerSubModeEnabled(false);
         m_waveView->setArrowModeEnabled(false);
         m_waveView->setArrowSubModeEnabled(true);
+        m_waveView->setSelectionModeEnabled(false);
     }
     else
     {
@@ -234,27 +262,61 @@ void MainWindow::onSelectBlockToggled(bool enabled)
 
     if (enabled)
     {
-        // Desactivar otros modos exclusivos
-        uncheck(m_cutAction);
-        uncheck(m_eraseAction);
-        uncheck(m_addMarkerAction);
-        uncheck(m_subMarkerAction);
-        uncheck(m_arrowAction);
-        uncheck(m_subArrowAction);
-
+        activateXDesactivateAll(m_allActions, m_selAction);
         m_waveView->setCutModeEnabled(false);
         m_waveView->setEraseModeEnabled(false);
+        m_waveView->setMarkerSubModeEnabled(true);
         m_waveView->setMarkerAddModeEnabled(false);
-        m_waveView->setMarkerSubModeEnabled(false);
         m_waveView->setArrowModeEnabled(false);
         m_waveView->setArrowSubModeEnabled(false);
-
         m_waveView->setSelectionModeEnabled(true);
-        m_waveView->setFocus();
     }
     else
     {
         m_waveView->setSelectionModeEnabled(false);
+    }
+}
+void MainWindow::onCutToggled(bool enabled)
+{
+    if (!m_waveView)
+        return;
+
+    if (enabled)
+    {
+        activateXDesactivateAll(m_allActions, m_cutAction);
+        m_waveView->setCutModeEnabled(true);
+        m_waveView->setEraseModeEnabled(false);
+        m_waveView->setMarkerSubModeEnabled(false);
+        m_waveView->setMarkerAddModeEnabled(false);
+        m_waveView->setArrowModeEnabled(false);
+        m_waveView->setArrowSubModeEnabled(false);
+        m_waveView->setSelectionModeEnabled(false);
+    }
+    else
+    {
+        m_waveView->setCutModeEnabled(false);
+    }
+}
+
+void MainWindow::onEraseToggled(bool enabled)
+{
+    if (!m_waveView)
+        return;
+
+    if (enabled)
+    {
+        activateXDesactivateAll(m_allActions, m_eraseAction);
+        m_waveView->setCutModeEnabled(false);
+        m_waveView->setEraseModeEnabled(true);
+        m_waveView->setMarkerSubModeEnabled(false);
+        m_waveView->setMarkerAddModeEnabled(false);
+        m_waveView->setArrowModeEnabled(false);
+        m_waveView->setArrowSubModeEnabled(false);
+        m_waveView->setSelectionModeEnabled(false);
+    }
+    else
+    {
+        m_waveView->setEraseModeEnabled(false);
     }
 }
 void MainWindow::onUndo()
@@ -354,124 +416,6 @@ void MainWindow::onSignalDoubleClicked(QListWidgetItem *item)
     }
 }
 
-void MainWindow::onCutToggled(bool enabled)
-{
-    if (!m_waveView)
-        return;
-
-    if (enabled)
-    {
-        if (m_eraseAction)
-        {
-            m_eraseAction->blockSignals(true);
-            m_eraseAction->setChecked(false);
-            m_eraseAction->blockSignals(false);
-        }
-        m_waveView->setEraseModeEnabled(false);
-        m_waveView->setCutModeEnabled(true);
-    }
-    else
-    {
-        m_waveView->setCutModeEnabled(false);
-    }
-}
-
-void MainWindow::onEraseToggled(bool enabled)
-{
-    if (!m_waveView)
-        return;
-
-    if (enabled)
-    {
-        if (m_cutAction)
-        {
-            m_cutAction->blockSignals(true);
-            m_cutAction->setChecked(false);
-            m_cutAction->blockSignals(false);
-        }
-        m_waveView->setCutModeEnabled(false);
-        m_waveView->setEraseModeEnabled(true);
-    }
-    else
-    {
-        m_waveView->setEraseModeEnabled(false);
-    }
-}
-
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent),
-      m_document(this),
-      m_waveView(nullptr),
-      m_sampleSpin(nullptr),
-      m_splitter(nullptr),
-      m_hierarchyTree(nullptr),
-      m_signalList(nullptr),
-      m_waveScroll(nullptr),
-      m_cutAction(nullptr),
-      m_eraseAction(nullptr),
-      m_viewHierarchyAction(nullptr)
-{
-    createUi();
-    createMenus();
-    createToolBar();
-
-    // Mantener botones de undo/redo actualizados
-    statusBar()->showMessage(tr("Ready"));
-    connect(&m_document, &WaveDocument::undoRedoStateChanged,
-            this, &MainWindow::updateUndoRedoActions);
-
-    updateUndoRedoActions(); // estado inicial
-}
-
-void MainWindow::createUi()
-{
-    // Main splitter: left hierarchy, right waveform
-    m_splitter = new QSplitter(this);
-    m_splitter->setOrientation(Qt::Horizontal);
-
-    // Left panel for VCD hierarchy and signal list
-    QWidget *leftPanel = new QWidget(m_splitter);
-    QVBoxLayout *leftLayout = new QVBoxLayout(leftPanel);
-    leftLayout->setContentsMargins(2, 2, 2, 2);
-    leftLayout->setSpacing(2);
-
-    m_hierarchyTree = new QTreeWidget(leftPanel);
-    m_hierarchyTree->setHeaderLabel(tr("Hierarchy"));
-    leftLayout->addWidget(m_hierarchyTree, 2);
-
-    m_signalList = new QListWidget(leftPanel);
-    leftLayout->addWidget(m_signalList, 1);
-
-    leftPanel->setLayout(leftLayout);
-    m_splitter->addWidget(leftPanel);
-
-    // Waveform on the right inside a QScrollArea to allow scrolling and zooming
-    m_waveScroll = new QScrollArea(m_splitter);
-    m_waveScroll->setWidgetResizable(true);
-    m_waveScroll->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-
-    m_waveView = new WaveView(&m_document, m_waveScroll);
-    m_waveScroll->setWidget(m_waveView);
-
-    m_splitter->addWidget(m_waveScroll);
-
-    setCentralWidget(m_splitter);
-    setWindowTitle(tr("WavePaint"));
-    resize(1200, 700);
-
-    // By default,dont show hierarchy on the left.
-    QList<int> sizes;
-    sizes << 0 << width(); // izquierda = 0, derecha = todo
-    m_splitter->setSizes(sizes);
-
-    // Connect hierarchy selection to the signal list
-    connect(m_hierarchyTree, &QTreeWidget::currentItemChanged,
-            this, &MainWindow::onHierarchySelectionChanged);
-
-    // Double-click a signal in the list => add it to the waveform
-    connect(m_signalList, &QListWidget::itemDoubleClicked,
-            this, &MainWindow::onSignalDoubleClicked);
-}
 
 void MainWindow::cancelModes()
 {
@@ -490,7 +434,37 @@ void MainWindow::cancelModes()
         m_eraseAction->setChecked(false);
         m_eraseAction->blockSignals(false);
     }
+        if (m_arrowAction)
+    {
+        m_arrowAction->blockSignals(true);
+        m_arrowAction->setChecked(false);
+        m_arrowAction->blockSignals(false);
+    }
+        if (m_subArrowAction)
+    {
+        m_subArrowAction->blockSignals(true);
+        m_subArrowAction->setChecked(false);
+        m_subArrowAction->blockSignals(false);
+    }
+        if (m_subMarkerAction)
+    {
+        m_subMarkerAction->blockSignals(true);
+        m_subMarkerAction->setChecked(false);
+        m_subMarkerAction->blockSignals(false);
+    }
+        if (m_addMarkerAction)
+    {
+        m_addMarkerAction->blockSignals(true);
+        m_addMarkerAction->setChecked(false);
+        m_addMarkerAction->blockSignals(false);
+    }
 
+     if (m_selAction)
+    {
+        m_selAction->blockSignals(true);
+        m_selAction->setChecked(false);
+        m_selAction->blockSignals(false);
+    }
     m_waveView->setCutModeEnabled(false);
     m_waveView->setEraseModeEnabled(false);
 }
