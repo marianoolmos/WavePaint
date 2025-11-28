@@ -41,8 +41,8 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //======================================================================
-#include <QPainterPath>   
-#include <cmath>      
+#include <QPainterPath>
+#include <cmath>
 #include "WaveView.h"
 #include <QPainter>
 #include <QMouseEvent>
@@ -54,6 +54,7 @@
 #include <QLinearGradient>
 #include <QMessageBox>
 #include <QCursor>
+#include <QKeyEvent>
 
 static constexpr int UNDEFINED_VALUE = -1;
 
@@ -86,6 +87,7 @@ WaveView::WaveView(WaveDocument *doc, QWidget *parent)
 {
     setMouseTracking(true);
     setAutoFillBackground(true);
+    setFocusPolicy(Qt::StrongFocus);
 
     if (m_doc)
     {
@@ -184,43 +186,45 @@ void WaveView::zoomOut()
 
 bool WaveView::exportToPng(const QString &fileName, const QColor &background)
 {
-    if (!m_doc) return false;
-    if (fileName.isEmpty()) return false;
+    if (!m_doc)
+        return false;
+    if (fileName.isEmpty())
+        return false;
 
     const auto &sigs = m_doc->signalList();
     int sampleCount = m_doc->sampleCount();
     int signalCount = static_cast<int>(sigs.size());
 
-    if (signalCount == 0) {
+    if (signalCount == 0)
+    {
         signalCount = 1;
     }
 
-    int rightMargin  = 20;
+    int rightMargin = 20;
     int bottomMargin = 20;
 
-    int contentWidth  = m_leftMargin + sampleCount * m_cellWidth + rightMargin;
-    int contentHeight = m_topMargin  + signalCount * m_rowHeight + bottomMargin;
+    int contentWidth = m_leftMargin + sampleCount * m_cellWidth + rightMargin;
+    int contentHeight = m_topMargin + signalCount * m_rowHeight + bottomMargin;
 
     // Tamaño lógico (el tamaño "normal" del widget)
     QSize logicalSize(contentWidth, contentHeight);
 
     // Factor de escala para exportar en más resolución
-    const int scale = 3;  // prueba 2 o 3
+    const int scale = 3; // prueba 2 o 3
 
     // Tamaño real del PNG = lógico * scale
-    QSize imageSize(logicalSize.width()  * scale,
+    QSize imageSize(logicalSize.width() * scale,
                     logicalSize.height() * scale);
 
     QImage image(imageSize, QImage::Format_ARGB32);
     image.fill(Qt::transparent);
 
-    m_exportSize        = logicalSize;   // usamos el tamaño lógico en paintEvent
-    m_exportBackground  = background;
+    m_exportSize = logicalSize; // usamos el tamaño lógico en paintEvent
+    m_exportBackground = background;
 
     QPainter painter(&image);
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::TextAntialiasing, true);
-
 
     // dibujamos todo escalado
     painter.scale(scale, scale);
@@ -234,7 +238,6 @@ bool WaveView::exportToPng(const QString &fileName, const QColor &background)
 
     return image.save(fileName);
 }
-
 
 void WaveView::onDocumentChanged()
 {
@@ -297,10 +300,8 @@ void WaveView::paintEvent(QPaintEvent *event)
     Q_UNUSED(event);
     QPainter p(this);
 
-
     p.setRenderHint(QPainter::Antialiasing, true);
     p.setRenderHint(QPainter::TextAntialiasing, true);
-    
 
     QColor bg = m_exportBackground.isValid() ? m_exportBackground : palette().base().color();
 
@@ -456,24 +457,25 @@ void WaveView::paintEvent(QPaintEvent *event)
     }
     // --- Flechas existentes ---
     const auto &arrows = m_doc->arrowList();
-    if (!arrows.empty()) {
+    if (!arrows.empty())
+    {
         QPen arrowPen(Qt::red);
         arrowPen.setWidth(2);
         arrowPen.setCapStyle(Qt::RoundCap);
         arrowPen.setJoinStyle(Qt::RoundJoin);
         p.setPen(arrowPen);
 
-
-        for (const Arrow &a : arrows) {
+        for (const Arrow &a : arrows)
+        {
             QPointF p1 = signalSampleToPoint(a.startSignal, a.startSample);
-            QPointF p2 = signalSampleToPoint(a.endSignal,   a.endSample);
+            QPointF p2 = signalSampleToPoint(a.endSignal, a.endSample);
 
             QPainterPath path;
             path.moveTo(p1);
 
             // Curva simple: control en el medio, un poco por arriba
             qreal midX = (p1.x() + p2.x()) / 2.0;
-            qreal dy   = std::abs(p1.y() - p2.y());
+            qreal dy = std::abs(p1.y() - p2.y());
             qreal lift = std::max<qreal>(m_rowHeight, dy / 2.0 + m_rowHeight / 2.0);
             qreal ctrlY = std::min(p1.y(), p2.y()) - lift;
 
@@ -498,21 +500,22 @@ void WaveView::paintEvent(QPaintEvent *event)
 
     // --- Flecha en previsualización (modo ArrowAdd) ---
     if (m_mode == Mode::ArrowAdd && m_arrowHasStart &&
-        m_arrowPreviewSignal >= 0 && m_arrowPreviewSample >= 0) {
+        m_arrowPreviewSignal >= 0 && m_arrowPreviewSample >= 0)
+    {
 
         QPen previewPen(Qt::red);
         previewPen.setWidth(1);
         previewPen.setStyle(Qt::DashLine);
         p.setPen(previewPen);
 
-        QPointF p1 = signalSampleToPoint(m_arrowStartSignal,  m_arrowStartSample);
+        QPointF p1 = signalSampleToPoint(m_arrowStartSignal, m_arrowStartSample);
         QPointF p2 = signalSampleToPoint(m_arrowPreviewSignal, m_arrowPreviewSample);
 
         QPainterPath path;
         path.moveTo(p1);
 
         qreal midX = (p1.x() + p2.x()) / 2.0;
-        qreal dy   = std::abs(p1.y() - p2.y());
+        qreal dy = std::abs(p1.y() - p2.y());
         qreal lift = std::max<qreal>(m_rowHeight, dy / 2.0 + m_rowHeight / 2.0);
         qreal ctrlY = std::min(p1.y(), p2.y()) - lift;
         QPointF ctrl(midX, ctrlY);
@@ -521,6 +524,257 @@ void WaveView::paintEvent(QPaintEvent *event)
         p.drawPath(path);
     }
 
+    if (m_blockSelectionActive && m_doc)
+    {
+        int topSig, bottomSig, startSample, endSample;
+        if (normalizedBlockSelection(topSig, bottomSig, startSample, endSample))
+        {
+            int x1 = m_leftMargin + startSample * m_cellWidth;
+            int x2 = m_leftMargin + (endSample + 1) * m_cellWidth;
+            int y1 = m_topMargin + topSig * m_rowHeight;
+            int y2 = m_topMargin + (bottomSig + 1) * m_rowHeight;
+
+            QRect selRect(x1, y1, x2 - x1, y2 - y1);
+
+            QColor fill(0, 120, 215, 40);
+            QPen pen(QColor(0, 120, 215));
+            pen.setStyle(Qt::DashLine);
+            pen.setWidth(2);
+
+            p.save();
+            p.setPen(pen);
+            p.setBrush(fill);
+            p.drawRect(selRect);
+            p.restore();
+        }
+    }
+
+    if (m_blockSelectionActive && m_doc)
+    {
+        int topSig, bottomSig, startSample, endSample;
+        if (normalizedBlockSelection(topSig, bottomSig, startSample, endSample))
+        {
+            int x1 = m_leftMargin + startSample * m_cellWidth;
+            int x2 = m_leftMargin + (endSample + 1) * m_cellWidth;
+            int y1 = m_topMargin + topSig * m_rowHeight;
+            int y2 = m_topMargin + (bottomSig + 1) * m_rowHeight;
+
+            QRect selRect(x1, y1, x2 - x1, y2 - y1);
+
+            QColor fill(0, 120, 215, 40);
+            QPen pen(QColor(0, 120, 215));
+            pen.setStyle(Qt::DashLine);
+            pen.setWidth(2);
+
+            p.save();
+            p.setPen(pen);
+            p.setBrush(fill);
+            p.drawRect(selRect);
+            p.restore();
+        }
+    }
+
+    // --- Preview de pegado (rectángulo que sigue al ratón) ---
+    if (m_selectionModeEnabled &&
+        m_blockPastePreviewActive &&
+        m_doc && m_doc->hasBlockClipboard())
+    {
+
+        const auto &sigs = m_doc->signalList();
+        int sigCount = static_cast<int>(sigs.size());
+        int sampleCount = m_doc->sampleCount();
+
+        int clipRows = m_doc->blockClipboardSignalCount();
+        int clipCols = m_doc->blockClipboardSampleCount();
+
+        if (sigCount > 0 && sampleCount > 0 &&
+            clipRows > 0 && clipCols > 0)
+        {
+
+            int topSig = m_blockPasteSignal;
+            int startSample = m_blockPasteSample;
+
+            if (topSig < 0)
+                topSig = 0;
+            if (topSig > sigCount - clipRows)
+                topSig = std::max(0, sigCount - clipRows);
+            if (startSample < 0)
+                startSample = 0;
+            if (startSample > sampleCount - clipCols)
+                startSample = std::max(0, sampleCount - clipCols);
+
+            int x1 = m_leftMargin + startSample * m_cellWidth;
+            int x2 = x1 + clipCols * m_cellWidth;
+            int y1 = m_topMargin + topSig * m_rowHeight;
+            int y2 = y1 + clipRows * m_rowHeight;
+
+            // Marco del preview
+            QColor fill(0, 100, 255, 30);
+            QPen pen(QColor(0, 100, 255));
+            pen.setStyle(Qt::DashLine);
+            pen.setWidth(2);
+
+            p.save();
+            p.setPen(pen);
+            p.setBrush(fill);
+            p.drawRect(QRect(x1, y1, x2 - x1, y2 - y1));
+            p.restore();
+
+            // --- Contenido del clipboard: ondas reales ---
+            const auto &vals2D = m_doc->blockClipboardValues();
+            const auto &labs2D = m_doc->blockClipboardLabels();
+            const auto &types2D = m_doc->blockClipboardTypes();
+            const auto &colors2D = m_doc->blockClipboardColors();
+
+            int rows = std::min(clipRows, (int)vals2D.size());
+
+            for (int r = 0; r < rows; ++r)
+            {
+                int destSignalIndex = topSig + r;
+                if (destSignalIndex < 0 || destSignalIndex >= sigCount)
+                    continue;
+
+                SignalType stype = (r < (int)types2D.size())
+                                       ? types2D[r]
+                                       : SignalType::Bit;
+                QColor baseColor = (r < (int)colors2D.size())
+                                       ? colors2D[r]
+                                       : QColor(Qt::blue);
+
+                const auto &rowVals = vals2D[r];
+                const auto &rowLabs = (r < (int)labs2D.size()) ? labs2D[r]
+                                                               : std::vector<QString>();
+
+                int rowTop = m_topMargin + destSignalIndex * m_rowHeight;
+                int rowBottom = rowTop + m_rowHeight - 1;
+
+                if (stype == SignalType::Bit)
+                {
+                    // --- Preview para señal bit ---
+                    int highY = rowTop + m_rowHeight * 0.25;
+                    int lowY = rowTop + m_rowHeight * 0.75;
+
+                    p.save();
+                    QPen bitPen(baseColor);
+                    bitPen.setWidth(2);
+                    bitPen.setCapStyle(Qt::RoundCap);
+                    p.setPen(bitPen);
+
+                    bool havePrev = false;
+                    int prevY = lowY;
+
+                    int cols = std::min(clipCols, (int)rowVals.size());
+
+                    for (int c = 0; c < cols; ++c)
+                    {
+                        int v = rowVals[c];
+                        if (v != 0 && v != 1)
+                        {
+                            havePrev = false;
+                            continue;
+                        }
+
+                        int globalSample = startSample + c;
+                        int x0 = m_leftMargin + globalSample * m_cellWidth;
+                        int x1s = x0 + m_cellWidth;
+
+                        int y = (v == 0) ? lowY : highY;
+
+                        if (!havePrev)
+                        {
+                            prevY = y;
+                            havePrev = true;
+                        }
+                        else
+                        {
+                            if (y != prevY)
+                            {
+                                p.drawLine(x0, prevY, x0, y);
+                            }
+                            prevY = y;
+                        }
+
+                        p.drawLine(x0, prevY, x1s, prevY);
+                    }
+
+                    p.restore();
+                }
+                else
+                {
+                    // --- Preview para señal vector ---
+                    p.save();
+
+                    QColor fillColor = baseColor;
+                    fillColor.setAlphaF(0.4);
+                    QPen vPen(baseColor);
+                    vPen.setWidth(2);
+                    p.setPen(vPen);
+
+                    int barTop = rowTop + (int)(m_rowHeight * 0.25);
+                    int barHeight = (int)(m_rowHeight * 0.5);
+
+                    int cols = std::min(clipCols, (int)rowVals.size());
+                    int c = 0;
+                    while (c < cols)
+                    {
+                        int v = rowVals[c];
+                        if (v == UNDEFINED_VALUE)
+                        {
+                            ++c;
+                            continue;
+                        }
+
+                        int startC = c;
+                        int endC = c;
+                        for (int k = c + 1; k < cols; ++k)
+                        {
+                            if (rowVals[k] != v)
+                                break;
+                            endC = k;
+                        }
+
+                        int leftX = m_leftMargin + (startSample + startC) * m_cellWidth;
+                        int rightX = m_leftMargin + (startSample + endC + 1) * m_cellWidth;
+
+                        QRect barRect(leftX, barTop, rightX - leftX, barHeight);
+                        p.fillRect(barRect, fillColor);
+                        p.drawRect(barRect);
+
+                        QString lab;
+                        if (startC < (int)rowLabs.size())
+                            lab = rowLabs[startC];
+
+                        QString txt = lab.isEmpty()
+                                          ? QString::number(v)
+                                          : QString("%1 (%2)").arg(lab).arg(v);
+
+                        QFontMetrics fm(p.font());
+                        int tw = fm.horizontalAdvance(txt);
+                        if (tw < barRect.width())
+                        {
+                            int lum = qRound(0.299 * fillColor.red() +
+                                             0.587 * fillColor.green() +
+                                             0.114 * fillColor.blue());
+                            QColor txtColor = (lum < 128) ? Qt::white : Qt::black;
+                            p.setPen(txtColor);
+                            p.drawText(barRect, Qt::AlignCenter, txt);
+                            p.setPen(vPen);
+                        }
+
+                        c = endC + 1;
+                    }
+
+                    p.restore();
+                }
+
+                // Separador inferior de la fila (ligero)
+                p.save();
+                p.setPen(QColor(200, 200, 200, 120));
+                p.drawLine(0, rowBottom, width(), rowBottom);
+                p.restore();
+            }
+        }
+    }
 }
 
 void WaveView::drawSignal(QPainter &p, const Signal &sig, int index)
@@ -675,7 +929,7 @@ void WaveView::drawVectorSignal(QPainter &p, const Signal &sig, int index)
 
     QColor baseColor = sig.color;
     QColor fillColor = baseColor;
-    fillColor.setAlphaF(0.6);
+    fillColor.setAlphaF(0.8);
     QPen pen(baseColor);
     pen.setWidth(2);
     p.setPen(pen);
@@ -836,6 +1090,33 @@ void WaveView::mousePressEvent(QMouseEvent *event)
     int sigIdx = -1;
     int sampleIdx = -1;
 
+    if (event->button() == Qt::LeftButton && m_selectionModeEnabled)
+    {
+        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+        {
+            // Empezamos SIEMPRE una nueva selección
+            m_blockSelecting = true;
+            m_blockSelectionActive = true;
+            m_blockSelStartSignal = sigIdx;
+            m_blockSelEndSignal = sigIdx;
+            m_blockSelStartSample = sampleIdx;
+            m_blockSelEndSample = sampleIdx;
+
+            // Mientras estás definiendo selección, NO hay preview de pegado
+            m_blockPastePreviewActive = false;
+            update();
+        }
+        else
+        {
+            // Click fuera de la zona de waveform -> cancelamos selección y preview
+            m_blockSelecting = false;
+            m_blockSelectionActive = false;
+            m_blockPastePreviewActive = false;
+            update();
+        }
+        return;
+    }
+
     // SOLO gestionamos aquí el botón izquierdo
     if (event->button() == Qt::LeftButton)
     {
@@ -852,19 +1133,22 @@ void WaveView::mousePressEvent(QMouseEvent *event)
                 return; // no seguimos con pintura ni nada más
             }
         }
-                // 2) Modo borrar flecha (ArrowDelete):
+        // 2) Modo borrar flecha (ArrowDelete):
         //    un clic cerca de una flecha borra SOLO esa flecha
-        if (m_mode == Mode::ArrowSub) {
+        if (m_mode == Mode::ArrowSub)
+        {
             const auto &arrows = m_doc->arrowList();
-            if (!arrows.empty()) {
+            if (!arrows.empty())
+            {
                 QPointF click = event->pos();
                 int bestIndex = -1;
                 qreal bestDist2 = (qreal)(m_cellWidth * m_cellWidth); // umbral máximo
 
-                for (int i = 0; i < static_cast<int>(arrows.size()); ++i) {
+                for (int i = 0; i < static_cast<int>(arrows.size()); ++i)
+                {
                     const Arrow &a = arrows[i];
                     QPointF p1 = signalSampleToPoint(a.startSignal, a.startSample);
-                    QPointF p2 = signalSampleToPoint(a.endSignal,   a.endSample);
+                    QPointF p2 = signalSampleToPoint(a.endSignal, a.endSample);
 
                     // Aproximamos la curva por el segmento recto p1-p2
                     QLineF seg(p1, p2);
@@ -876,21 +1160,23 @@ void WaveView::mousePressEvent(QMouseEvent *event)
                     QPointF w = click - p1;
                     qreal c1 = QPointF::dotProduct(w, v);
                     qreal c2 = QPointF::dotProduct(v, v);
-                    qreal t  = (c2 > 0.0) ? (c1 / c2) : 0.0;
+                    qreal t = (c2 > 0.0) ? (c1 / c2) : 0.0;
                     t = std::max<qreal>(0.0, std::min<qreal>(1.0, t));
 
                     QPointF proj = p1 + v * t;
                     qreal dx = click.x() - proj.x();
                     qreal dy = click.y() - proj.y();
-                    qreal dist2 = dx*dx + dy*dy;
+                    qreal dist2 = dx * dx + dy * dy;
 
-                    if (dist2 < bestDist2) {
+                    if (dist2 < bestDist2)
+                    {
                         bestDist2 = dist2;
                         bestIndex = i;
                     }
                 }
 
-                if (bestIndex >= 0) {
+                if (bestIndex >= 0)
+                {
                     m_doc->subArrowById(arrows[bestIndex].id);
                     return; // ya hemos borrado una flecha
                 }
@@ -900,26 +1186,31 @@ void WaveView::mousePressEvent(QMouseEvent *event)
             return;
         }
 
-                // 2) Modo flecha: dos clics definen origen y destino
-        if (m_mode == Mode::ArrowAdd) {
-            if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
+        // 2) Modo flecha: dos clics definen origen y destino
+        if (m_mode == Mode::ArrowAdd)
+        {
+            if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+            {
 
-                if (!m_arrowHasStart) {
+                if (!m_arrowHasStart)
+                {
                     // Primer punto: origen
-                    m_arrowHasStart      = true;
-                    m_arrowStartSignal   = sigIdx;
-                    m_arrowStartSample   = sampleIdx;
+                    m_arrowHasStart = true;
+                    m_arrowStartSignal = sigIdx;
+                    m_arrowStartSample = sampleIdx;
                     m_arrowPreviewSignal = sigIdx;
                     m_arrowPreviewSample = sampleIdx;
                     update();
-                } else {
+                }
+                else
+                {
                     // Segundo punto: destino -> crear flecha
                     m_doc->addArrow(m_arrowStartSignal, m_arrowStartSample,
-                                    sigIdx,             sampleIdx);
+                                    sigIdx, sampleIdx);
 
-                    m_arrowHasStart      = false;
-                    m_arrowStartSignal   = -1;
-                    m_arrowStartSample   = -1;
+                    m_arrowHasStart = false;
+                    m_arrowStartSignal = -1;
+                    m_arrowStartSample = -1;
                     m_arrowPreviewSignal = -1;
                     m_arrowPreviewSample = -1;
                     update();
@@ -1084,6 +1375,71 @@ void WaveView::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
+    if (m_selectionModeEnabled)
+    {
+
+        // 1) Si estás arrastrando con el botón izquierdo, actualizamos la selección
+        if (m_blockSelecting && (event->buttons() & Qt::LeftButton))
+        {
+            int sig, samp;
+            if (mapToSignalSample(event->pos(), sig, samp))
+            {
+                m_blockSelEndSignal = sig;
+                m_blockSelEndSample = samp;
+                update();
+            }
+            return;
+        }
+
+        // 2) Solo movemos el PREVIEW si YA está activo
+        //    (es decir, después de Ctrl+C o Ctrl+X)
+        if (m_blockPastePreviewActive && m_doc->hasBlockClipboard())
+        {
+            int sig, samp;
+            if (mapToSignalSample(event->pos(), sig, samp))
+            {
+                const auto &sigs = m_doc->signalList();
+                int sigCount = static_cast<int>(sigs.size());
+                int sampleCount = m_doc->sampleCount();
+                int clipRows = m_doc->blockClipboardSignalCount();
+                int clipCols = m_doc->blockClipboardSampleCount();
+
+                int destSignal = sig;
+                int destSample = samp;
+
+                // Que quepa el bloque dentro del documento
+                if (destSignal > sigCount - clipRows)
+                    destSignal = std::max(0, sigCount - clipRows);
+                if (destSample > sampleCount - clipCols)
+                    destSample = std::max(0, sampleCount - clipCols);
+                if (destSignal < 0)
+                    destSignal = 0;
+                if (destSample < 0)
+                    destSample = 0;
+
+                if (destSignal != m_blockPasteSignal ||
+                    destSample != m_blockPasteSample)
+                {
+
+                    m_blockPasteSignal = destSignal;
+                    m_blockPasteSample = destSample;
+                    update();
+                }
+            }
+            else
+            {
+                // Ratón fuera de la zona de señales -> ocultamos el preview
+                m_blockPastePreviewActive = false;
+                update();
+            }
+            return;
+        }
+
+        // Si estás en modo selección pero sin arrastrar ni preview, no tocamos nada más
+        QWidget::mouseMoveEvent(event);
+        return;
+    }
+
     // 1) Arrastre de señal (reordenar verticalmente)
     if (m_isMovingSignal && (event->buttons() & Qt::LeftButton))
     {
@@ -1100,12 +1456,15 @@ void WaveView::mouseMoveEvent(QMouseEvent *event)
         }
         return;
     }
-        // 2) Modo ArrowAdd: mover segundo punto de la flecha (previsualización)
-    if (m_mode == Mode::ArrowAdd && m_arrowHasStart) {
+    // 2) Modo ArrowAdd: mover segundo punto de la flecha (previsualización)
+    if (m_mode == Mode::ArrowAdd && m_arrowHasStart)
+    {
         int sigIdx = -1;
         int sampleIdx = -1;
-        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx)) {
-            if (sigIdx != m_arrowPreviewSignal || sampleIdx != m_arrowPreviewSample) {
+        if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+        {
+            if (sigIdx != m_arrowPreviewSignal || sampleIdx != m_arrowPreviewSample)
+            {
                 m_arrowPreviewSignal = sigIdx;
                 m_arrowPreviewSample = sampleIdx;
                 update();
@@ -1120,6 +1479,7 @@ void WaveView::mouseMoveEvent(QMouseEvent *event)
     {
         int sigIdx = -1;
         int sampleIdx = -1;
+
         if (mapToSignalSample(event->pos(), sigIdx, sampleIdx))
         {
             if (sampleIdx != m_markerPreviewSample)
@@ -1232,6 +1592,16 @@ void WaveView::mouseReleaseEvent(QMouseEvent *event)
         return;
     }
 
+    if (m_selectionModeEnabled && event->button() == Qt::LeftButton)
+    {
+        if (m_blockSelecting)
+        {
+            m_blockSelecting = false;
+            update();
+        }
+        return;
+    }
+
     // Fin de arrastre de señal
     if (m_isMovingSignal && event->button() == Qt::LeftButton)
     {
@@ -1330,6 +1700,96 @@ void WaveView::contextMenuEvent(QContextMenuEvent *event)
         return;
     }
 
+    if (m_selectionModeEnabled)
+    {
+        QMenu menu(this);
+
+        QAction *cancelAct = nullptr;
+        QAction *pasteAct = nullptr;
+
+        // Opción para cancelar selección / preview
+        if (m_blockSelectionActive || m_blockPastePreviewActive)
+        {
+            cancelAct = menu.addAction(tr("Cancel current selection"));
+            menu.addSeparator();
+        }
+
+        // Opción para pegar bloque con botón derecho
+        int sigIdx = -1, sampleIdx = -1;
+        if (m_doc->hasBlockClipboard() &&
+            mapToSignalSample(event->pos(), sigIdx, sampleIdx))
+        {
+
+            pasteAct = menu.addAction(tr("Paste block here"));
+        }
+
+        QAction *chosen = menu.exec(event->globalPos());
+        if (!chosen)
+            return;
+
+        // --- CANCELAR SELECCIÓN ---
+        if (chosen == cancelAct)
+        {
+            m_blockSelectionActive = false;
+            m_blockSelecting = false;
+            m_blockPastePreviewActive = false;
+
+            m_blockSelStartSignal = -1;
+            m_blockSelEndSignal = -1;
+            m_blockSelStartSample = -1;
+            m_blockSelEndSample = -1;
+
+            update();
+            return;
+        }
+
+        // --- PEGAR BLOQUE CON CLICK DERECHO ---
+        if (pasteAct && chosen == pasteAct)
+        {
+            int clipRows = m_doc->blockClipboardSignalCount();
+            int clipCols = m_doc->blockClipboardSampleCount();
+
+            const auto &sigs = m_doc->signalList();
+            int sigCount = static_cast<int>(sigs.size());
+            int sampleCount = m_doc->sampleCount();
+
+            if (sigCount > 0 && sampleCount > 0 &&
+                clipRows > 0 && clipCols > 0)
+            {
+
+                int destSignal = sigIdx;
+                int destSample = sampleIdx;
+
+                if (destSignal > sigCount - clipRows)
+                    destSignal = std::max(0, sigCount - clipRows);
+                if (destSample > sampleCount - clipCols)
+                    destSample = std::max(0, sampleCount - clipCols);
+                if (destSignal < 0)
+                    destSignal = 0;
+                if (destSample < 0)
+                    destSample = 0;
+
+                m_doc->pasteBlock(destSignal, destSample);
+
+                // Actualizamos selección al bloque pegado
+                m_blockSelectionActive = true;
+                m_blockSelecting = false;
+                m_blockSelStartSignal = destSignal;
+                m_blockSelEndSignal = destSignal + clipRows - 1;
+                m_blockSelStartSample = destSample;
+                m_blockSelEndSample = destSample + clipCols - 1;
+
+                // El preview ya no es necesario justo después de pegar con botón derecho
+                m_blockPastePreviewActive = false;
+
+                update();
+            }
+            return;
+        }
+
+        // Si se eligió algo más en el futuro...
+        return;
+    }
     // Right click
     if (event->pos().x() < m_leftMargin)
     {
@@ -1514,17 +1974,20 @@ void WaveView::setMarkerSubModeEnabled(bool en)
 
 void WaveView::setArrowModeEnabled(bool en)
 {
-    if (en) {
+    if (en)
+    {
         m_mode = Mode::ArrowAdd;
-    } else if (m_mode == Mode::ArrowAdd) {
+    }
+    else if (m_mode == Mode::ArrowAdd)
+    {
         m_mode = Mode::None;
     }
 
-    m_arrowHasStart       = false;
-    m_arrowStartSignal    = -1;
-    m_arrowStartSample    = -1;
-    m_arrowPreviewSignal  = -1;
-    m_arrowPreviewSample  = -1;
+    m_arrowHasStart = false;
+    m_arrowStartSignal = -1;
+    m_arrowStartSample = -1;
+    m_arrowPreviewSignal = -1;
+    m_arrowPreviewSample = -1;
 
     update();
 }
@@ -1540,11 +2003,168 @@ QPointF WaveView::signalSampleToPoint(int signalIndex, int sampleIndex) const
 }
 void WaveView::setArrowSubModeEnabled(bool en)
 {
-    if (en) {
+    if (en)
+    {
         m_mode = Mode::ArrowSub;
-    } else if (m_mode == Mode::ArrowSub) {
+    }
+    else if (m_mode == Mode::ArrowSub)
+    {
         m_mode = Mode::None;
     }
     // No necesitamos estado especial como en ArrowAdd
     update();
+}
+void WaveView::setSelectionModeEnabled(bool en)
+{
+    m_selectionModeEnabled = en;
+    m_blockSelecting = false;
+    m_blockPastePreviewActive = false;
+    if (!en)
+    {
+        m_blockSelectionActive = false;
+        m_blockSelStartSignal = -1;
+        m_blockSelEndSignal = -1;
+        m_blockSelStartSample = -1;
+        m_blockSelEndSample = -1;
+    }
+    update();
+}
+
+bool WaveView::normalizedBlockSelection(int &topSignal, int &bottomSignal,
+                                        int &startSample, int &endSample) const
+{
+    if (!m_blockSelectionActive || !m_doc)
+        return false;
+
+    const auto &sigs = m_doc->signalList();
+    if (sigs.empty())
+        return false;
+
+    int sigCount = static_cast<int>(sigs.size());
+    int sampleCount = m_doc->sampleCount();
+
+    int tSig = std::min(m_blockSelStartSignal, m_blockSelEndSignal);
+    int bSig = std::max(m_blockSelStartSignal, m_blockSelEndSignal);
+    int sS = std::min(m_blockSelStartSample, m_blockSelEndSample);
+    int eS = std::max(m_blockSelStartSample, m_blockSelEndSample);
+
+    if (tSig < 0 || tSig >= sigCount ||
+        bSig < 0 || bSig >= sigCount)
+        return false;
+    if (sS < 0 || sS >= sampleCount ||
+        eS < 0 || eS >= sampleCount)
+        return false;
+
+    topSignal = tSig;
+    bottomSignal = bSig;
+    startSample = sS;
+    endSample = eS;
+    return true;
+}
+
+bool WaveView::pointInBlockSelection(int signalIndex, int sampleIndex) const
+{
+    int top, bottom, start, end;
+    if (!normalizedBlockSelection(top, bottom, start, end))
+        return false;
+
+    if (signalIndex < top || signalIndex > bottom)
+        return false;
+    if (sampleIndex < start || sampleIndex > end)
+        return false;
+
+    return true;
+}
+void WaveView::keyPressEvent(QKeyEvent *event)
+{
+    if (!m_doc)
+    {
+        QWidget::keyPressEvent(event);
+        return;
+    }
+
+    if (m_selectionModeEnabled)
+    {
+        int top, bottom, start, end;
+
+        // --- Ctrl + C: COPIAR bloque y activar preview ---
+        if (event->matches(QKeySequence::Copy))
+        {
+            if (normalizedBlockSelection(top, bottom, start, end))
+            {
+                m_doc->copyBlock(top, bottom, start, end);
+
+                // Ahora empezamos la previsualización desde la esquina de la selección
+                m_blockPasteSignal = top;
+                m_blockPasteSample = start;
+                m_blockPastePreviewActive = true;
+                update();
+            }
+            event->accept();
+            return;
+        }
+
+        // --- Ctrl + X: CORTAR bloque (copiar + borrar) y activar preview ---
+        if (event->matches(QKeySequence::Cut))
+        {
+            if (normalizedBlockSelection(top, bottom, start, end))
+            {
+                m_doc->copyBlock(top, bottom, start, end);
+                m_doc->clearBlock(top, bottom, start, end);
+
+                m_blockPasteSignal = top;
+                m_blockPasteSample = start;
+                m_blockPastePreviewActive = true;
+                update();
+            }
+            event->accept();
+            return;
+        }
+
+        // --- Ctrl + V: PEGAR en la posición del preview ---
+        if (event->matches(QKeySequence::Paste))
+        {
+            if (m_doc->hasBlockClipboard())
+            {
+                const auto &sigs = m_doc->signalList();
+                int sigCount = static_cast<int>(sigs.size());
+                int sampleCount = m_doc->sampleCount();
+                int clipRows = m_doc->blockClipboardSignalCount();
+                int clipCols = m_doc->blockClipboardSampleCount();
+
+                if (sigCount > 0 && sampleCount > 0 &&
+                    clipRows > 0 && clipCols > 0)
+                {
+
+                    int destSignal = m_blockPastePreviewActive ? m_blockPasteSignal : 0;
+                    int destSample = m_blockPastePreviewActive ? m_blockPasteSample : 0;
+
+                    if (destSignal > sigCount - clipRows)
+                        destSignal = std::max(0, sigCount - clipRows);
+                    if (destSample > sampleCount - clipCols)
+                        destSample = std::max(0, sampleCount - clipCols);
+                    if (destSignal < 0)
+                        destSignal = 0;
+                    if (destSample < 0)
+                        destSample = 0;
+
+                    m_doc->pasteBlock(destSignal, destSample);
+
+                    // La selección pasa a ser el bloque pegado
+                    m_blockSelectionActive = true;
+                    m_blockSelecting = false;
+                    m_blockSelStartSignal = destSignal;
+                    m_blockSelEndSignal = destSignal + clipRows - 1;
+                    m_blockSelStartSample = destSample;
+                    m_blockSelEndSample = destSample + clipCols - 1;
+
+                    update();
+                }
+            }
+            event->accept();
+            return;
+        }
+    }
+
+    QWidget::keyPressEvent(event);
 }

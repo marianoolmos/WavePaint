@@ -110,7 +110,7 @@ private slots:
     void onSubMarkerToggled(bool enabled);
     void onArrowToggled(bool enabled);
     void onSubArrowToggled(bool enabled);
-
+    void onSelectBlockToggled(bool enabled);
     void cancelModes();
 };
 

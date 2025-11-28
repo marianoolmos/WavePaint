@@ -126,6 +126,16 @@ public:
     void removeSignal(int signalIndex);
     void moveSignal(int fromIndex, int toIndex);
 
+    bool hasBlockClipboard() const { return m_hasBlockClipboard; }
+    int  blockClipboardSignalCount() const { return m_blockClipboardSignalCount; }
+    int  blockClipboardSampleCount() const { return m_blockClipboardSampleCount; }
+
+    void copyBlock(int topSignal, int bottomSignal,
+                   int startSample, int endSample);
+    void pasteBlock(int destTopSignal, int destStartSample);
+    void clearBlock(int topSignal, int bottomSignal,
+                    int startSample, int endSample);
+
     const std::vector<Marker> &markerList() const { return m_markers; }
 
 
@@ -158,6 +168,14 @@ public:
     bool loadFromFile(const QString &fileName);
     bool loadFromVcd(const QString &fileName);
 
+
+
+    const std::vector<std::vector<int>>     &blockClipboardValues() const { return m_blockClipboardValues; }
+    const std::vector<std::vector<QString>> &blockClipboardLabels() const { return m_blockClipboardLabels; }
+    const std::vector<SignalType>           &blockClipboardTypes()  const { return m_blockClipboardTypes; }
+    const std::vector<QColor>               &blockClipboardColors() const { return m_blockClipboardColors; }
+
+
 public slots:
     void setSampleCount(int count);
 
@@ -178,7 +196,19 @@ private:
     bool   m_hasClipboardSignal = false;
     Signal m_clipboardSignal;
 
+
+    bool m_hasBlockClipboard = false;
+    int  m_blockClipboardSignalCount = 0;
+    int  m_blockClipboardSampleCount = 0;
+    std::vector<std::vector<int>>       m_blockClipboardValues;
+    std::vector<std::vector<QString>>   m_blockClipboardLabels;
+
+    std::vector<SignalType>             m_blockClipboardTypes;   
+    std::vector<QColor>                 m_blockClipboardColors;
+
     void resizeSignals(int newSampleCount);
+
+
 };
 
 #endif // SIGNALMODEL_H

@@ -598,3 +598,139 @@ void WaveDocument::clearArrows()
     m_nextArrowId = 1;
     emit dataChanged();
 }
+void WaveDocument::copyBlock(int topSignal, int bottomSignal,
+                             int startSample, int endSample)
+{
+    int sigCount    = static_cast<int>(m_signals.size());
+    int sampleCount = m_sampleCount;
+    if (sigCount == 0 || sampleCount == 0)
+        return;
+
+    if (topSignal < 0 || bottomSignal < 0 ||
+        topSignal >= sigCount || bottomSignal >= sigCount)
+        return;
+
+    if (topSignal > bottomSignal)
+        std::swap(topSignal, bottomSignal);
+
+    if (startSample < 0 || endSample < 0 ||
+        startSample >= sampleCount || endSample >= sampleCount)
+        return;
+
+    if (startSample > endSample)
+        std::swap(startSample, endSample);
+
+    int rows = bottomSignal - topSignal + 1;
+    int cols = endSample    - startSample + 1;
+
+    if (rows <= 0 || cols <= 0)
+        return;
+
+    m_blockClipboardSignalCount = rows;
+    m_blockClipboardSampleCount = cols;
+
+    m_blockClipboardValues.assign(rows, std::vector<int>(cols, UNDEFINED_VALUE));
+    m_blockClipboardLabels.assign(rows, std::vector<QString>(cols));
+    m_blockClipboardTypes.resize(rows);
+    m_blockClipboardColors.resize(rows);
+
+    for (int r = 0; r < rows; ++r) {
+        const Signal &s = m_signals[topSignal + r];
+
+        m_blockClipboardTypes[r]  = s.type;
+        m_blockClipboardColors[r] = s.color;
+
+        for (int c = 0; c < cols; ++c) {
+            int src = startSample + c;
+            if (src >= 0 && src < static_cast<int>(s.values.size())) {
+                m_blockClipboardValues[r][c] = s.values[src];
+            }
+            if (src >= 0 && src < static_cast<int>(s.labels.size())) {
+                m_blockClipboardLabels[r][c] = s.labels[src];
+            }
+        }
+    }
+
+    m_hasBlockClipboard = true;
+    // No emitimos dataChanged() porque no cambia el documento visible
+}
+
+
+void WaveDocument::pasteBlock(int destTopSignal, int destStartSample)
+{
+    if (!m_hasBlockClipboard)
+        return;
+
+    int sigCount    = static_cast<int>(m_signals.size());
+    int sampleCount = m_sampleCount;
+    if (sigCount == 0 || sampleCount == 0)
+        return;
+
+    if (destTopSignal < 0 || destTopSignal >= sigCount)
+        return;
+    if (destStartSample < 0 || destStartSample >= sampleCount)
+        return;
+
+    int rows = m_blockClipboardSignalCount;
+    int cols = m_blockClipboardSampleCount;
+
+    int maxRows = std::min(rows, sigCount    - destTopSignal);
+    int maxCols = std::min(cols, sampleCount - destStartSample);
+
+    for (int r = 0; r < maxRows; ++r) {
+        Signal &s = m_signals[destTopSignal + r];
+
+        if (static_cast<int>(s.values.size()) < sampleCount)
+            s.values.resize(sampleCount, UNDEFINED_VALUE);
+        if (static_cast<int>(s.labels.size()) < sampleCount)
+            s.labels.resize(sampleCount);
+
+        for (int c = 0; c < maxCols; ++c) {
+            int dst = destStartSample + c;
+            if (dst < 0 || dst >= sampleCount)
+                continue;
+
+            s.values[dst] = m_blockClipboardValues[r][c];
+            s.labels[dst] = m_blockClipboardLabels[r][c];
+        }
+    }
+
+    emit dataChanged();
+}
+
+void WaveDocument::clearBlock(int topSignal, int bottomSignal,
+                              int startSample, int endSample)
+{
+    int sigCount    = static_cast<int>(m_signals.size());
+    int sampleCount = m_sampleCount;
+    if (sigCount == 0 || sampleCount == 0)
+        return;
+
+    if (topSignal < 0 || bottomSignal < 0 ||
+        topSignal >= sigCount || bottomSignal >= sigCount)
+        return;
+    if (topSignal > bottomSignal)
+        std::swap(topSignal, bottomSignal);
+
+    if (startSample < 0 || endSample < 0 ||
+        startSample >= sampleCount || endSample >= sampleCount)
+        return;
+    if (startSample > endSample)
+        std::swap(startSample, endSample);
+
+    for (int sIdx = topSignal; sIdx <= bottomSignal; ++sIdx) {
+        Signal &s = m_signals[sIdx];
+
+        if (static_cast<int>(s.values.size()) < sampleCount)
+            s.values.resize(sampleCount, UNDEFINED_VALUE);
+        if (static_cast<int>(s.labels.size()) < sampleCount)
+            s.labels.resize(sampleCount);
+
+        for (int t = startSample; t <= endSample; ++t) {
+            s.values[t] = UNDEFINED_VALUE;
+            s.labels[t].clear();
+        }
+    }
+
+    emit dataChanged();
+}

@@ -264,6 +264,8 @@ void MainWindow::createToolBar()
             this,                 &MainWindow::onArrowToggled);
     connect(m_subArrowAction,  &QAction::toggled,
             this,                 &MainWindow::onSubArrowToggled);
+       connect(m_selAction, &QAction::toggled,
+            this,                &MainWindow::onSelectBlockToggled);
 }
 
 void MainWindow::exportPng()
@@ -876,5 +878,39 @@ void MainWindow::onSubArrowToggled(bool enabled)
         m_waveView->setArrowSubModeEnabled(true);
     } else {
         m_waveView->setArrowSubModeEnabled(false);
+    }
+}
+void MainWindow::onSelectBlockToggled(bool enabled)
+{
+    if (!m_waveView)
+        return;
+
+    auto uncheck = [](QAction *act) {
+        if (!act) return;
+        act->blockSignals(true);
+        act->setChecked(false);
+        act->blockSignals(false);
+    };
+
+    if (enabled) {
+        // Desactivar otros modos exclusivos
+        uncheck(m_cutAction);
+        uncheck(m_eraseAction);
+        uncheck(m_addMarkerAction);
+        uncheck(m_subMarkerAction);
+        uncheck(m_arrowAction);
+        uncheck(m_subArrowAction);
+
+        m_waveView->setCutModeEnabled(false);
+        m_waveView->setEraseModeEnabled(false);
+        m_waveView->setMarkerAddModeEnabled(false);
+        m_waveView->setMarkerSubModeEnabled(false);
+        m_waveView->setArrowModeEnabled(false);
+        m_waveView->setArrowSubModeEnabled(false);
+        
+        m_waveView->setSelectionModeEnabled(true);
+        m_waveView->setFocus(); 
+    } else {
+        m_waveView->setSelectionModeEnabled(false);
     }
 }

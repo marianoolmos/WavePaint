@@ -76,6 +76,9 @@ public slots:
     void setArrowSubModeEnabled(bool en); 
     QPointF signalSampleToPoint(int signalIndex, int sampleIndex) const;
 
+    //Selection
+    void setSelectionModeEnabled(bool en);
+
 
     // Horizontal zoom (changes the cell width)
     void zoomIn();
@@ -88,6 +91,8 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+
 
 private slots:
     void onDocumentChanged();
@@ -146,6 +151,26 @@ private:
     QSize m_exportSize;
     // Background color for export (if invalid, use palette background)
     QColor m_exportBackground;
+
+    // Modo selección de bloque
+    bool m_selectionModeEnabled = false;
+    bool m_blockSelectionActive = false;
+    bool m_blockSelecting       = false;
+    int  m_blockSelStartSignal  = -1;
+    int  m_blockSelStartSample  = -1;
+    int  m_blockSelEndSignal    = -1;
+    int  m_blockSelEndSample    = -1;
+
+    // Preview de pegado (posición donde se pegará el bloque)
+    bool m_blockPastePreviewActive = false;
+    int  m_blockPasteSignal        = -1;  // signal top
+    int  m_blockPasteSample        = -1;  // sample de inicio
+
+    // Helpers
+    bool normalizedBlockSelection(int &topSignal, int &bottomSignal,
+                                  int &startSample, int &endSample) const;
+    bool pointInBlockSelection(int signalIndex, int sampleIndex) const;
+
 
     bool mapToSignalSample(const QPoint &pos, int &signalIndex, int &sampleIndex) const;
     int mapToSignalIndexFromY(int y) const;
