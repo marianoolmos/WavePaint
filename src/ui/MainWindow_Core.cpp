@@ -23,7 +23,7 @@
 // Copyright (c) 2025 Mariano Olmos
 //
 // Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this VHDL code and associated documentation files (the
+// a copy of this CPP code and associated documentation files (the
 // "Software"), to deal in the Software without restriction, including
 // without limitation the rights to use, copy, modify, merge, publish,
 // distribute, sublicense, and/or sell copies of the Software, and to
@@ -64,6 +64,7 @@
 #include <QListWidget>
 #include <QTreeWidget>
 #include <QSplitter>
+#include <QLabel>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -92,6 +93,13 @@ MainWindow::MainWindow(QWidget *parent)
     };
     // Mantener botones de undo/redo actualizados
     statusBar()->showMessage(tr("Ready"));
+    QLabel *footerLabel = new QLabel(
+        tr("WavePaint by Mariano Olmos (mariano.olmos@outlook.com)"),
+        this
+    );
+    footerLabel->setStyleSheet("color: gray; padding-right: 8px;");
+    statusBar()->addPermanentWidget(footerLabel);
+
     connect(&m_document, &WaveDocument::undoRedoStateChanged,
             this, &MainWindow::updateUndoRedoActions);
 
