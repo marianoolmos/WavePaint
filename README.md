@@ -15,6 +15,7 @@ Visual editor for digital waveforms in C++/Qt, intended as a kind of "WaveDrom b
 - Add Arrows 
    ![Arrows](/img/arrow.gif)
 - Add Markers
+   ![Markers](/img/markers.gif) 
 - Deleting:
   - Right-click on a cell of any signal ⇒ clears the value at that timestep (becomes undefined).
 - Color per signal:
@@ -22,6 +23,7 @@ Visual editor for digital waveforms in C++/Qt, intended as a kind of "WaveDrom b
   - Right-click on the name ⇒ menu with:
     - **Rename signal...**
     - **Change color...**
+     ![color](/img/color.gif)
 - Cut tool (**scissors**):
     ![Cut Tool](/img/cut.gif)
   - In the toolbar (below the menu) there's a button with the emoticon **✂**.
