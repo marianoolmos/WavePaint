@@ -13,7 +13,7 @@ Visual editor for digital waveforms in C++/Qt, intended as a kind of "WaveDrom b
   ![Paint Vector Signal](/img/paintvec.gif)
   - **Clock** signal: automatic clock generator (pulses, high time, low time).
 - Add Arrows 
-   ![Arrows](/img/arrows.gif)
+   ![Arrows](/img/arrow.gif)
 - Add Markers
 - Deleting:
   - Right-click on a cell of any signal ⇒ clears the value at that timestep (becomes undefined).
