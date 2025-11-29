@@ -752,8 +752,32 @@ void WaveView::drawVectorSignal(QPainter &p, const Signal &sig, int index)
         QRect barRect(barLeft, barTop, barRight - barLeft, barHeight);
 
         // Fill and border of the bar
+        // Rectangle fill
         p.fillRect(barRect, fillColor);
-        p.drawRect(barRect);
+
+        // Border of the rectangle but without the side where there is a triangle
+        p.setPen(pen);
+
+        // Top line
+        p.drawLine(QPoint(barLeft, barTop),
+                   QPoint(barRight, barTop));
+        // Bottom line
+        p.drawLine(QPoint(barLeft, barTop + barHeight),
+                   QPoint(barRight, barTop + barHeight));
+
+        // Left side only if there is NO left triangle
+        if (!hasLeftPeak)
+        {
+            p.drawLine(QPoint(barLeft, barTop),
+                       QPoint(barLeft, barTop + barHeight));
+        }
+
+        // Right side only if there is NO right triangle
+        if (!hasRightPeak)
+        {
+            p.drawLine(QPoint(barRight, barTop),
+                       QPoint(barRight, barTop + barHeight));
+        }
 
         // Text: label + value (if label exists)
         QString label;
@@ -775,32 +799,56 @@ void WaveView::drawVectorSignal(QPainter &p, const Signal &sig, int index)
 
         int cy = barTop + barHeight / 2;
 
-        // Left side: peak with base on the bar and tip outward
         if (hasLeftPeak)
         {
             int baseX = barLeft;
             int tipX = leftEdge;
+
+            QPoint top(baseX, barTop);
+            QPoint bottom(baseX, barTop + barHeight);
+            QPoint tip(tipX, cy);
+
             QPolygon triL;
-            triL << QPoint(baseX, barTop)
-                 << QPoint(tipX, cy)
-                 << QPoint(baseX, barTop + barHeight);
+            triL << top
+                 << tip
+                 << bottom;
+
+            // 1) Rellenar el triángulo sin borde
+            p.setPen(Qt::NoPen);
             p.setBrush(fillColor);
             p.drawPolygon(triL);
+
+            // 2) Dibujar solo los lados externos (no la base pegada al rectángulo)
             p.setBrush(Qt::NoBrush);
+            p.setPen(pen);
+            p.drawLine(tip, top);
+            p.drawLine(tip, bottom);
         }
 
-        // Right side: peak with base on the bar and tip outward
         if (hasRightPeak)
         {
             int baseX = barRight;
             int tipX = rightEdge;
+
+            QPoint top(baseX, barTop);
+            QPoint bottom(baseX, barTop + barHeight);
+            QPoint tip(tipX, cy);
+
             QPolygon triR;
-            triR << QPoint(baseX, barTop)
-                 << QPoint(tipX, cy)
-                 << QPoint(baseX, barTop + barHeight);
+            triR << top
+                 << tip
+                 << bottom;
+
+            // 1) Rellenar el triángulo sin borde
+            p.setPen(Qt::NoPen);
             p.setBrush(fillColor);
             p.drawPolygon(triR);
+
+            // 2) Dibujar solo los lados externos (no la base pegada al rectángulo)
             p.setBrush(Qt::NoBrush);
+            p.setPen(pen);
+            p.drawLine(tip, top);
+            p.drawLine(tip, bottom);
         }
 
         t = end + 1;
