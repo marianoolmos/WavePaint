@@ -26,7 +26,7 @@ Visual editor for digital waveforms in C++/Qt, intended as a kind of "WaveDrom b
     - **Change color...**
      ![color](/img/color.gif)
 - Cut tool (**scissors**):
-    ![Cut Tool](/img/cut.gif)
+    ![Cut Tool](/img/cut.gif) 
   - In the toolbar (below the menu) there's a button with the emoticon **✂**.
   - Clicking it enters **cut mode**:
     - Left-click on a time point ⇒ marks the start.
