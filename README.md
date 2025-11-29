@@ -1,5 +1,5 @@
 <p align="left">
-  <img src="/img/WavePaint.png" width="200" alt="logo">
+  <img src="/img/WavePaint_header.png" width="200" alt="logo">
 </p>
 Visual editor for digital waveforms in C++/Qt, intended as a kind of "WaveDrom by hand": you don't have to write code, you just draw with the mouse.
 
