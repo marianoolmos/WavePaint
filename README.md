@@ -1,6 +1,4 @@
-<p align="left">
-  <img src="/img/WavePaint_header.png" width="200" alt="logo">
-</p>
+![Header](/img/WavePaint_header.png)
 Visual editor for digital waveforms in C++/Qt, intended as a kind of "WaveDrom by hand": you don't have to write code, you just draw with the mouse.
 
 ## Main features
