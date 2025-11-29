@@ -3,25 +3,18 @@
 Visual editor for digital waveforms in C++/Qt, intended as a kind of "WaveDrom by hand": you don't have to write code, you just draw with the mouse.
 
 ## Main features
-
 - Cross-platform: Linux and Windows (Qt5/Qt6 + Qt Widgets).
 - Discrete timeline (samples / `time steps`), configurable from the toolbar.
-- Add signals via context menu (right-click on the waveform area):
-  - **Bit** signal: typical digital waveform (high/low), now with **gradient shading** under the high level.
-  ![Paint Bit Signal](/img/paintbit.gif)
 
-  - **Vector** signal (bit vector): a bar with numeric value and optional label per segment, with transitions drawn as **symmetric peaks** (visual style `==><==`).
+- Add signals via context menu (right-click on the waveform area):
+  - **Bit** signal: typical digital waveform (high/low).
+  ![Paint Bit Signal](/img/paintbit.gif)
+  - **Vector** signal (bit vector): a bar with numeric value and optional label per segment.
+  ![Paint Vector Signal](/img/paintvec.gif)
   - **Clock** signal: automatic clock generator (pulses, high time, low time).
-- Editing **bit** signals (paint-like):
-  - Hold the left button **in the top half** of the row ⇒ you paint `1` while dragging (high wave). Under the high line a gradient shading of the signal color is shown (approx. 70% at top → 0% at bottom).
-  - Hold in the **bottom half** ⇒ you paint `0` while dragging (low wave).
-  - A continuous **square wave** is drawn while editing.
-- Editing **vector** signals:
-  - Left-click and drag to select a time range.
-  - On release:
-    - Enter the integer value (decimal).
-    - (Optional) Enter a label for the segment (`DATA`, `ADDR`, etc.).
-  - Each continuous segment is drawn as a **bar** with the text `label (value)`, and transitions between values are drawn with **peaks on both sides** (`==><==` visually).
+- Add Arrows 
+   ![Arrows](/img/arrows.gif)
+- Add Markers
 - Deleting:
   - Right-click on a cell of any signal ⇒ clears the value at that timestep (becomes undefined).
 - Color per signal:
@@ -30,6 +23,7 @@ Visual editor for digital waveforms in C++/Qt, intended as a kind of "WaveDrom b
     - **Rename signal...**
     - **Change color...**
 - Cut tool (**scissors**):
+    ![Cut Tool](/img/cut.gif)
   - In the toolbar (below the menu) there's a button with the emoticon **✂**.
   - Clicking it enters **cut mode**:
     - Left-click on a time point ⇒ marks the start.
@@ -47,6 +41,7 @@ Visual editor for digital waveforms in C++/Qt, intended as a kind of "WaveDrom b
     - Values per sample,
     - Labels per sample (vectors).
 - Export PNG:
+  ![Export as PNG](/img/png.gif)
   - `File → Export PNG...`
   - Asks for a **white** or **black** background.
   - TODO : ADD Themes : ex . A calssic theme in bw.s
