@@ -8,6 +8,8 @@ Visual editor for digital waveforms in C++/Qt, intended as a kind of "WaveDrom b
 - Discrete timeline (samples / `time steps`), configurable from the toolbar.
 - Add signals via context menu (right-click on the waveform area):
   - **Bit** signal: typical digital waveform (high/low), now with **gradient shading** under the high level.
+  ![Paint Bit Signal](/img/paintbit.gif)
+
   - **Vector** signal (bit vector): a bar with numeric value and optional label per segment, with transitions drawn as **symmetric peaks** (visual style `==><==`).
   - **Clock** signal: automatic clock generator (pulses, high time, low time).
 - Editing **bit** signals (paint-like):

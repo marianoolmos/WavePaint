@@ -1,0 +1,5 @@
+/home/cafecafe/Documents/git/WavePaint/build/CMakeFiles/WavePaint.dir
+/home/cafecafe/Documents/git/WavePaint/build/CMakeFiles/edit_cache.dir
+/home/cafecafe/Documents/git/WavePaint/build/CMakeFiles/rebuild_cache.dir
+/home/cafecafe/Documents/git/WavePaint/build/CMakeFiles/WavePaint_autogen_timestamp_deps.dir
+/home/cafecafe/Documents/git/WavePaint/build/CMakeFiles/WavePaint_autogen.dir
