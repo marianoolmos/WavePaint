@@ -42,6 +42,7 @@ Visual editor for digital waveforms in C++/Qt, intended as a kind of "WaveDrom b
     - Values per sample,
     - Labels per sample (vectors).
 - Export PNG:
+   ![ex](/img/ex1.png)
   ![Export as PNG](/img/png.gif)
   - `File → Export PNG...`
   - Asks for a **white** or **black** background.
