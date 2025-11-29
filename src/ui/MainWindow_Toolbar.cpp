@@ -63,6 +63,8 @@
 #include <QListWidget>
 #include <QTreeWidget>
 #include <QSplitter>
+#include <QLabel>
+#include <QSizePolicy>
 
 void MainWindow::createToolBar()
 {
@@ -169,5 +171,19 @@ void MainWindow::createToolBar()
             this,                 &MainWindow::onSubArrowToggled);
     connect(m_selAction, &QAction::toggled,
             this,                &MainWindow::onSelectBlockToggled);
+
+    // Espaciador que empuja lo que venga después hacia la derecha
+    QWidget *spacer = new QWidget(tb);
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    tb->addWidget(spacer);
+
+    // Label "WP" en verde
+    QLabel *logoLabel = new QLabel(tb);
+    logoLabel->setText("∿ Wave Paint ∿");
+    logoLabel->setStyleSheet("font-weight: bold; color:  #e4e4e4ff; padding: 0 6px;");
+    logoLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
+    tb->addWidget(logoLabel);
+
 }
 
