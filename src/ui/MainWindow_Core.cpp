@@ -82,6 +82,7 @@ MainWindow::MainWindow(QWidget *parent)
     createUi();
     createMenus();
     createToolBar();
+
     m_allActions = {
         m_cutAction,
         m_eraseAction,

@@ -98,7 +98,22 @@ WaveView::WaveView(WaveDocument *doc, QWidget *parent)
 
 QSize WaveView::minimumSizeHint() const
 {
-    return QSize(200, 150);
+    if (!m_doc)
+        return QSize(200, 150);
+
+    const auto &sigs = m_doc->signalList();
+    int sampleCount = m_doc->sampleCount();
+    int signalCount = static_cast<int>(sigs.size());
+    if (signalCount <= 0)
+        signalCount = 1;
+
+    int rightMargin = 40;
+    int bottomMargin = 20;
+
+    int w = m_leftMargin + sampleCount * m_cellWidth + rightMargin;
+    int h = m_topMargin + signalCount * m_rowHeight + bottomMargin;
+
+    return QSize(w, h);
 }
 
 QSize WaveView::sizeHint() const
