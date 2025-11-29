@@ -1,5 +1,8 @@
 # WavePaint
-  ![logo](/img/logo.png)
+<p align="center">
+  <img src="/img/logo.png" width="100" alt="logo">
+</p>
+
 Visual editor for digital waveforms in C++/Qt, intended as a kind of "WaveDrom by hand": you don't have to write code, you just draw with the mouse.
 
 ## Main features
