@@ -619,14 +619,9 @@ void WaveView::mouseReleaseEvent(QMouseEvent *event)
                 tr("Name or Value:"),
                 QLineEdit::Normal,
                 QString());
-            if (label.isEmpty())
-            {
-                value = 0;
-            }
-            else
-            {
-                value = label.toInt(0) + 1;
-            }
+ 
+                value = static_cast<int>(qHash(label));
+            
 
             m_doc->setVectorRange(m_selSignal, m_selStartSample, sampleIdx, value, label);
         }
